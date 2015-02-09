@@ -1,9 +1,6 @@
 # gitit wiki configuration file
 
-address: 0.0.0.0
-# sets the IP address on which the web server will listen.
-
-port: 5001
+port: 5011
 # sets the port on which the web server will run.
 
 wiki-title: Wiki
@@ -136,7 +133,9 @@ table-of-contents: yes
 # specifies whether to print a tables of contents (with links to
 # sections) on each wiki page.
 
-plugins:
+plugins: plugins/Dot
+#plugins: plugins/JavaScript
+
 # specifies a list of plugins to load.  Plugins may be specified
 # either by their path or by their module name.  If the plugin name
 # starts with Gitit.Plugin., gitit will assume that the plugin is
@@ -236,10 +235,13 @@ reset-password-message:
 # http://$hostname$/path/to/wiki$resetlink$ or
 # http://gitit.$hostname$$resetlink$
 
+#use-feed: yes
 use-feed: no
 # specifies whether an ATOM feed should be enabled (for the site and for
 # individual pages)
 
+#Do not add https in front if setup is proxying http->https
+#base-url: server.example.net:2443
 base-url:
 # the base URL of the wiki, to be used in constructing feed IDs
 # and RPX token_urls.
