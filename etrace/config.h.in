@@ -1,0 +1,7 @@
+#define PROJ_NAME "@CMAKE_PROJECT_NAME@"
+#define VERSION_MAJOR @etrace_VERSION_MAJOR@
+#define VERSION_MINOR @etrace_VERSION_MINOR@
+#define VERSION_PATCH @etrace_VERSION_PATCH@
+#define VERSION "@etrace_VERSION_MAJOR@.@etrace_VERSION_MINOR@.@etrace_VERSION_PATCH@"
+#cmakedefine ENABLE_LOGGING
+#cmakedefine ENABLE_SYSLOG

@@ -1,0 +1,6 @@
+include_directories("${PROJECT_BINARY_DIR}")
+if (ENABLE_SYSLOG)
+	add_library(logging log.c initfini.c)
+else (ENABLE_SYSLOG)
+	add_library(logging log.c)
+endif (ENABLE_SYSLOG)
