@@ -1,5 +1,11 @@
 cmake_minimum_required (VERSION 2.6)
-project (etrace)
+project (etrace C)
+
+#SET(BUILD_PARAVIEW_PLUGIN ON CACHE STRING "Build Paraview plugin?" FORCE)
+set(SYSROOTs
+	""
+	CACHE STRING
+	"System path (--system=)")
 
 # Enable any logging
 option(ENABLE_LOGGING
@@ -8,13 +14,24 @@ option(ENABLE_LOGGING
 option(ENABLE_SYSLOG
     "Enable logging to syslog (Linux/OSX)" OFF)
 
-set(CMAKE_C_FLAGS "-no-integrated-cpp -Wno-unused-function -g3 -ggdb3 -O0 -Wall")
-set(CMAKE_C_FLAGS_DEBUG "-no-integrated-cpp -Wno-unused-function -g3 -ggdb3 -O0 -Wall")
-set(CMAKE_C_FLAGS_RELEASE "-no-integrated-cpp -Wno-unused-function -g3 -ggdb3 -O0 -Wall")
+option(ENABLE_SYSLOG
+    "Enable logging to syslog (Linux/OSX)" OFF)
+
+#if (USE_SYSROOT)
+#	set(CMAKE_SYSROOT "${SYSROOT}")
+#	set(CFLAGS_SYSROOT "--sysroot=${CMAKE_SYSROOT}")
+#endif (SYSROOT)
+
+set(CFLAGS_SYSROOT "--sysroot=${CMAKE_SYSROOT}")
+
+set(CMAKE_C_FLAGS "${CFLAGS_SYSROOT} -no-integrated-cpp -Wno-unused-function -g3 -ggdb3 -O0 -Wall")
+set(CMAKE_C_FLAGS_DEBUG "${CFLAGS_SYSROOT} -no-integrated-cpp -Wno-unused-function -g3 -ggdb3 -O0 -Wall")
+set(CMAKE_C_FLAGS_RELEASE "${CFLAGS_SYSROOT} -no-integrated-cpp -Wno-unused-function -g3 -ggdb3 -O0 -Wall")
 
 if (ENABLE_LOGGING)
     include_directories ("${PROJECT_SOURCE_DIR}/lib/logging/include")
     add_subdirectory (lib/logging)
+	set (EXTRA_LIBS ${EXTRA_LIBS} logging)
 endif (ENABLE_LOGGING)
 
 # The version number.
@@ -34,4 +51,4 @@ configure_file (
 include_directories("${PROJECT_BINARY_DIR}")
 
 add_executable(etrace etrace.c)
-target_link_libraries (etrace logging)
+target_link_libraries (etrace ${EXTRA_LIBS})
