@@ -1,0 +1,15 @@
+README is in the wiki. Start reading in these simple steps:
+
+1) Install gitit if you don't have it already:
+
+http://gitit.net/Installing
+
+2) Execute the following:
+
+./start_wiki.sh
+
+3) Open browser and go to:
+
+http://localhost:5011
+
+
