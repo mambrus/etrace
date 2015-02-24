@@ -2,8 +2,8 @@ cmake_minimum_required (VERSION 2.6)
 project (etrace C)
 
 #SET(BUILD_PARAVIEW_PLUGIN ON CACHE STRING "Build Paraview plugin?" FORCE)
-set(SYSROOTs
-	""
+set(SYSROOT
+	${CMAKE_SYSROOT}
 	CACHE STRING
 	"System path (--system=)")
 
@@ -14,13 +14,11 @@ option(ENABLE_LOGGING
 option(ENABLE_SYSLOG
     "Enable logging to syslog (Linux/OSX)" OFF)
 
-option(ENABLE_SYSLOG
-    "Enable logging to syslog (Linux/OSX)" OFF)
-
-#if (USE_SYSROOT)
-#	set(CMAKE_SYSROOT "${SYSROOT}")
-#	set(CFLAGS_SYSROOT "--sysroot=${CMAKE_SYSROOT}")
-#endif (SYSROOT)
+if (NOT SYSROOT STREQUAL "")
+	message( "** INFO: SYSROOT was either set or defaulted from toolchain file" )
+	set(CMAKE_SYSROOT "${SYSROOT}")
+	set(CFLAGS_SYSROOT "--sysroot=${CMAKE_SYSROOT}")
+endif (NOT SYSROOT STREQUAL "")
 
 set(CFLAGS_SYSROOT "--sysroot=${CMAKE_SYSROOT}")
 
