@@ -60,5 +60,8 @@ set(ETRACE_SOURCE
 	opts.c
 	opts_help.c
 )
+
+install(PROGRAMS ${PROJECT_BINARY_DIR}/etrace DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
+
 add_executable(etrace ${ETRACE_SOURCE})
 target_link_libraries (etrace ${EXTRA_LIBS})

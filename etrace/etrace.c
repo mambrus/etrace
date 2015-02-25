@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <config.h>
-#include <log.h>
+#include "log.h"
 #include "opts.h"
 
 static struct opts opts = {

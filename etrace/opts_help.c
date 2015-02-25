@@ -46,8 +46,7 @@ void opts_help(FILE* file, int flags) {
 	if (file && flags & HELP_LONG) {
 		fprintf(file, "%s",
 			"Usage: etrace [OPTION...] \n"
-			"etrace -- A ftrace events companion."
-			"Set-up events/filters, then harvest for a specific time\n"
+			"etrace command line ftrace-events utility ("VERSION").\n"
 			"\n"
 			"Generic options:\n"
 			"  -D, --documentation        Output full documentation, then exit\n"
