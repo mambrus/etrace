@@ -16,6 +16,7 @@ typedef enum {
 void log_write(log_level level, const char *format, ...);
 void log_set_verbosity(log_level level);
 log_level str2loglevel(const char *str, int *ok);
+int log_getenv_loglevel(void);
 
 /* Bladerf compatible macros (too much to type though) */
 #define log_verbose(...)	log_write(LOG_LEVEL_VERBOSE, __VA_ARGS__)
