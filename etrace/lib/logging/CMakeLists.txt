@@ -1,6 +1,8 @@
 include_directories("${PROJECT_BINARY_DIR}")
 if (ENABLE_SYSLOG)
 	add_library(logging log.c initfini.c)
+	set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} -Wl,--undefined=__logging_init")
+	set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} -Wl,--undefined=__logging_init")
 else (ENABLE_SYSLOG)
 	add_library(logging log.c)
 endif (ENABLE_SYSLOG)

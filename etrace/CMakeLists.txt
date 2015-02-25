@@ -29,6 +29,7 @@ set(CMAKE_C_FLAGS_RELEASE "${CFLAGS_SYSROOT} -no-integrated-cpp -Wno-unused-func
 if (ENABLE_LOGGING)
     include_directories ("${PROJECT_SOURCE_DIR}/lib/logging/include")
     add_subdirectory (lib/logging)
+	set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} -Wl,--undefined=__logging_init")
 	set (EXTRA_LIBS ${EXTRA_LIBS} logging)
 endif (ENABLE_LOGGING)
 
