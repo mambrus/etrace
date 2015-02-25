@@ -17,6 +17,9 @@
  *   Free Software Foundation, Inc.,                                       *
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
+/*
+ * Parse single optoions for etrace 
+ */
 #include <stdio.h>
 #include <limits.h>
 #include <unistd.h>
@@ -36,59 +39,59 @@ static void opts_parse_opt(
 	const char *cmd,
 	int key,
 	char *arg,
-	struct arguments *arguments
+	struct opts *opts
 ){
 	extern const char ppclock_doc[];
 
 	switch (key) {
 		case 'v':
-			arguments->verbose = 1;
+			opts->verbose = 1;
 			break;
 		case 'T':
-			arguments->ptime = arg ? atoi (arg) : -1;
+			opts->ptime = arg ? atoi (arg) : -1;
 			break;
 		case 'O':
-			arguments->offtime = arg ? atoi (arg) : -1;
+			opts->offtime = arg ? atoi (arg) : -1;
 			break;
 		case 'p':
 			if ((arg != NULL) && (!strncmp(arg,"0x",2) || !strncmp(arg,"0X",2)))
-				sscanf(arg,"%x",&(arguments->port));
+				sscanf(arg,"%x",&(opts->port));
 			else
-				arguments->port = arg ? atoi (arg) : -1;
+				opts->port = arg ? atoi (arg) : -1;
 			break;
 		case 'n':
-			arguments->decimals = arg ? atoi (arg) : 0;
+			opts->decimals = arg ? atoi (arg) : 0;
 			break;
 		case 'i':
-			arguments->tio_trim = arg ? atoi (arg) : 0;
+			opts->tio_trim = arg ? atoi (arg) : 0;
 			break;
 		case 'R':
-			arguments->realtime = 1;
+			opts->realtime = 1;
 			break;
 		case 'S':
-			arguments->ssync = 1;
+			opts->ssync = 1;
 			break;
 		case 'd':
-			arguments->debuglevel = arg ? atoi (arg) : 0;
+			opts->debuglevel = arg ? atoi (arg) : 0;
 			break;
 		case 'z':
-			arguments->daemon = 1;
+			opts->daemon = 1;
 			break;
 		case 'L': 
-			arguments->segments_tst = 1;
+			opts->segments_tst = 1;
 			if (arg!=NULL) {
-				arguments->tst_has_startval=1;
+				opts->tst_has_startval=1;
 				int i=0,divisor=1;
-				for (i=0; i<arguments->decimals; i++) {
+				for (i=0; i<opts->decimals; i++) {
 					divisor*=10;
 				}
-				arguments->segtst_start_us = arg ? (atoi (arg) % divisor) : -1;
-				if (arguments->segtst_start_us == -1)
-					arguments->segtst_start_s = -1;
+				opts->segtst_start_us = arg ? (atoi (arg) % divisor) : -1;
+				if (opts->segtst_start_us == -1)
+					opts->segtst_start_s = -1;
 				else
-					arguments->segtst_start_s = arg ? (atoi (arg) / divisor) : 0;
+					opts->segtst_start_s = arg ? (atoi (arg) / divisor) : 0;
 			} else {
-				arguments->segtst_start_us = arg ? atoi (arg) : -1;
+				opts->segtst_start_us = arg ? atoi (arg) : -1;
 			}
 			break;
 
@@ -166,7 +169,7 @@ static int become_daemon()
 	return 0;
 }
 
-int opts_parse(int argc, char **argv, struct arguments *arguments) {
+int opts_parse(int argc, char **argv, struct opts *opts) {
 	int parsed_options=0;
 
 	while (1) {
@@ -178,18 +181,18 @@ int opts_parse(int argc, char **argv, struct arguments *arguments) {
 		/* Detect the end of the options. */
 		if (c == -1)
 			break;
-		opts_parse_opt(argv[0], c, optarg, arguments);
+		opts_parse_opt(argv[0], c, optarg, opts);
 		parsed_options++;
 	}
 
-	/* Handle any remaining command line arguments (not options). */
+	/* Handle any remaining command line opts (not options). */
 	if (optind < argc) {
-		perror("pclock: Too many arguments, ppclock takes only options.\n");
+		perror("pclock: Too many opts, ppclock takes only options.\n");
 		fflush(stderr);
 		opts_help(stderr, HELP_TRY | HELP_EXIT_ERR);
 	}
 
-	if (arguments->daemon) {
+	if (opts->daemon) {
 		become_daemon();
 	}
 	return parsed_options;

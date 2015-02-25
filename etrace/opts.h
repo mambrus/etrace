@@ -18,7 +18,7 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
-/* Options and arguments */ 
+/* Options and opts */ 
 
 #ifndef opts_h
 #define opts_h
@@ -40,8 +40,8 @@
 #define xstr(S) str(S)
 #define str(S) #S
 
-/* General arguments */
-struct arguments
+/* General opts */
+struct opts
 {
 	int verbose;
 	unsigned ptime;
@@ -63,7 +63,7 @@ struct arguments
 #ifndef __KERNEL__
 #include <stdio.h>
 void opts_help(FILE* file, int flags);
-int opts_parse(int argc, char **argv, struct arguments *);
+int opts_parse(int argc, char **argv, struct opts *);
 #endif
 
 #endif //opts_h
