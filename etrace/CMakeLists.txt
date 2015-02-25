@@ -26,6 +26,12 @@ set(CMAKE_C_FLAGS "${CFLAGS_SYSROOT} -no-integrated-cpp -Wno-unused-function -g3
 set(CMAKE_C_FLAGS_DEBUG "${CFLAGS_SYSROOT} -no-integrated-cpp -Wno-unused-function -g3 -ggdb3 -O0 -Wall")
 set(CMAKE_C_FLAGS_RELEASE "${CFLAGS_SYSROOT} -no-integrated-cpp -Wno-unused-function -g3 -ggdb3 -O0 -Wall")
 
+
+#Man-, help- and other generated pages
+include_directories ("${PROJECT_SOURCE_DIR}/doc/include")
+add_subdirectory (doc)
+set (EXTRA_LIBS ${EXTRA_LIBS} doc)
+
 if (ENABLE_LOGGING)
     include_directories ("${PROJECT_SOURCE_DIR}/lib/logging/include")
     add_subdirectory (lib/logging)
@@ -49,5 +55,10 @@ configure_file (
 # so that we will find TutorialConfig.h
 include_directories("${PROJECT_BINARY_DIR}")
 
-add_executable(etrace etrace.c)
+set(ETRACE_SOURCE
+	etrace.c
+	opts.c
+	opts_help.c
+)
+add_executable(etrace ${ETRACE_SOURCE})
 target_link_libraries (etrace ${EXTRA_LIBS})

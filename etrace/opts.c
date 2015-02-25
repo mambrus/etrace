@@ -33,6 +33,7 @@
 #include <string.h>
 #include <stdio.h>
 #include "opts.h"
+#include "doc.h"
 
 /* Parse a single option. */
 static void opts_parse_opt(
@@ -41,60 +42,16 @@ static void opts_parse_opt(
 	char *arg,
 	struct opts *opts
 ){
-	extern const char ppclock_doc[];
-
 	switch (key) {
-		case 'v':
-			opts->verbose = 1;
-			break;
 		case 'T':
 			opts->ptime = arg ? atoi (arg) : -1;
 			break;
-		case 'O':
-			opts->offtime = arg ? atoi (arg) : -1;
-			break;
-		case 'p':
-			if ((arg != NULL) && (!strncmp(arg,"0x",2) || !strncmp(arg,"0X",2)))
-				sscanf(arg,"%x",&(opts->port));
-			else
-				opts->port = arg ? atoi (arg) : -1;
-			break;
-		case 'n':
-			opts->decimals = arg ? atoi (arg) : 0;
-			break;
-		case 'i':
-			opts->tio_trim = arg ? atoi (arg) : 0;
-			break;
-		case 'R':
-			opts->realtime = 1;
-			break;
-		case 'S':
-			opts->ssync = 1;
-			break;
-		case 'd':
-			opts->debuglevel = arg ? atoi (arg) : 0;
+		case 'v':
+			opts->loglevel = arg ? atoi (arg) : 0;
 			break;
 		case 'z':
 			opts->daemon = 1;
 			break;
-		case 'L': 
-			opts->segments_tst = 1;
-			if (arg!=NULL) {
-				opts->tst_has_startval=1;
-				int i=0,divisor=1;
-				for (i=0; i<opts->decimals; i++) {
-					divisor*=10;
-				}
-				opts->segtst_start_us = arg ? (atoi (arg) % divisor) : -1;
-				if (opts->segtst_start_us == -1)
-					opts->segtst_start_s = -1;
-				else
-					opts->segtst_start_s = arg ? (atoi (arg) / divisor) : 0;
-			} else {
-				opts->segtst_start_us = arg ? atoi (arg) : -1;
-			}
-			break;
-
 		case 'u':
 			opts_help(stdout, HELP_USAGE | HELP_EXIT);
 			break;
@@ -102,7 +59,7 @@ static void opts_parse_opt(
 			opts_help(stdout, HELP_LONG | HELP_EXIT);
 			break;
 		case 'D':
-			printf("%s\n",ppclock_doc);
+			doc_print();
 			exit(0);
 			break;
 		case '?':
@@ -119,26 +76,19 @@ static void opts_parse_opt(
 			opts_help(stdout, HELP_VERSION | HELP_EXIT);
 			break;
 		default:
-			fprintf(stderr, "pclock: unrecognized option '-%c'\n", (char)key);
+			fprintf(stderr, "etrace: unrecognized option '-%c'\n", (char)key);
 			opts_help(stderr, HELP_TRY | HELP_EXIT_ERR);
 			break;
 		}
 }
 
 static struct option long_options[] = {
-	{"verbose",       no_argument,       0, 'v'},
-	{"realtime",      no_argument,       0, 'R'},
-	{"debuglevel",    required_argument, 0, 'd'},
+	{"verbosity",     required_argument, 0, 'v'},
 	{"period",        required_argument, 0, 'T'},
-	{"port",          required_argument, 0, 'p'},
-	{"decimals",      required_argument, 0, 'n'},
-	{"tiotrim",       required_argument, 0, 'i'},
-	{"syncstrobe",    no_argument,       0, 'S'},
-	{"documentation", no_argument,       0, 'D'},
-	{"usage",         no_argument,       0, 'u'},
-	{"LED seg test",  optional_argument, 0, 'L'},
-	{"version",       no_argument,       0, 'V'},
 	{"daemon",        no_argument,       0, 'z'},
+	{"documentation", no_argument,       0, 'D'},
+	{"help",          no_argument,       0, 'h'},
+	{"usage",         no_argument,       0, 'u'},
 	{"version",       no_argument,       0, 'V'},
 	{0, 0, 0, 0}
 };
@@ -146,8 +96,6 @@ static struct option long_options[] = {
 /* Returns 0 on success, -1 on error */
 static int become_daemon()
 {
-	int fd;
-
 	switch (fork()) {
 		case -1: return -1;
 		case 0:  break;
@@ -175,7 +123,7 @@ int opts_parse(int argc, char **argv, struct opts *opts) {
 	while (1) {
 		int option_index = 0;
 		int c = getopt_long(argc, argv,
-			"vT:O:p:n:SRd:i:DzuhVL::",
+			"v:T:zDuhV",
 			long_options,
 			&option_index);
 		/* Detect the end of the options. */
@@ -187,7 +135,7 @@ int opts_parse(int argc, char **argv, struct opts *opts) {
 
 	/* Handle any remaining command line opts (not options). */
 	if (optind < argc) {
-		perror("pclock: Too many opts, ppclock takes only options.\n");
+		perror("etrace: Too many opts, etrace takes only options.\n");
 		fflush(stderr);
 		opts_help(stderr, HELP_TRY | HELP_EXIT_ERR);
 	}

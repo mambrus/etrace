@@ -30,12 +30,7 @@
 #define HELP_EXIT     16
 #define HELP_EXIT_ERR 32
 
-#define DEF_PRD_OR_ON	10
-#define DEF_OFF 		1149
-#define DEF_SYNC 		1
-#define DEF_DECIMALS 	4
-#define DEF_PORT 		0x3F8
-#define DEF_TIO_TRIM 	48
+#define DEF_PTIME		1000
 
 #define xstr(S) str(S)
 #define str(S) #S
@@ -43,28 +38,14 @@
 /* General opts */
 struct opts
 {
-	int verbose;
+	int loglevel;
 	unsigned ptime;
-	unsigned offtime;
-	unsigned port;
-	unsigned decimals;
-	unsigned tio_trim;
-	int ssync;
-	int core;
-	int debuglevel;
 	int daemon;
-	int segments_tst;
-	int tst_has_startval;
-	int segtst_start_us;
-	int segtst_start_s;
-	int realtime;
 };
 
-#ifndef __KERNEL__
 #include <stdio.h>
 void opts_help(FILE* file, int flags);
 int opts_parse(int argc, char **argv, struct opts *);
-#endif
 
 #endif //opts_h
 

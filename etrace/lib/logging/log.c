@@ -9,11 +9,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#ifdef LOG_SYSLOG_ENABLED
-#   define DEF_LOG_LEVEL LOG_LEVEL_WARNING
-#else
-#   define DEF_LOG_LEVEL LOG_LEVEL_INFO
-#endif
 #define ENV_LOG_LEVEL "LOG_LEVEL"
 
 int log_getenv_loglevel(void) {

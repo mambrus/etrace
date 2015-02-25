@@ -1,5 +1,6 @@
 #ifndef log_h
 #define log_h
+
 /**
  * Severity levels for logging functions
  */
@@ -12,6 +13,12 @@ typedef enum {
     LOG_LEVEL_CRITICAL, /* Fatal error level logging */
     LOG_LEVEL_SILENT    /* No output */
 } log_level;
+
+#ifdef LOG_SYSLOG_ENABLED
+#   define DEF_LOG_LEVEL LOG_LEVEL_WARNING
+#else
+#   define DEF_LOG_LEVEL LOG_LEVEL_INFO
+#endif
 
 void log_write(log_level level, const char *format, ...);
 void log_set_verbosity(log_level level);
