@@ -11,7 +11,7 @@
 log_level str2loglevel(const char *str, int *ok)
 {
     log_level level = LOG_LEVEL_ERROR;
-    int valid = 0;
+    int valid = 1;
 
     if (!strcasecmp(str, "critical")) {
         level = LOG_LEVEL_CRITICAL;
