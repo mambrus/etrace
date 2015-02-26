@@ -18,7 +18,7 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 /*
- * Parse single optoions for etrace 
+ * Parse single options for etrace
  */
 #include <stdio.h>
 #include <limits.h>
@@ -32,6 +32,8 @@
 #include <getopt.h>
 #include <string.h>
 #include <stdio.h>
+
+#include <log.h>
 #include "opts.h"
 #include "doc.h"
 
@@ -47,10 +49,27 @@ static void opts_parse_opt(
 			opts->ptime = arg ? atoi (arg) : -1;
 			break;
 		case 'v':
-			opts->loglevel = arg ? atoi (arg) : 0;
+			if (arg[0]>='0' && arg[0]<='9')
+				opts->loglevel = arg ? atoi (arg) : 0;
+			else {
+				int ok;
+				opts->loglevel=str2loglevel(arg, &ok);
+				if (!ok)
+					LOGW("loglevel [%s] invalid. Falling back to default\n",
+						arg);
+			}
 			break;
 		case 'z':
 			opts->daemon = 1;
+			break;
+		case 'm':
+			strncpy(opts->debugfs_path, arg, PATH_MAX);
+			break;
+		case 'w':
+			strncpy(opts->workdir, arg, PATH_MAX);
+			break;
+		case 'p':
+			opts->pid = arg ? atoi (arg) : 0;
 			break;
 		case 'u':
 			opts_help(stdout, HELP_USAGE | HELP_EXIT);
@@ -85,6 +104,9 @@ static void opts_parse_opt(
 static struct option long_options[] = {
 	{"verbosity",     required_argument, 0, 'v'},
 	{"period",        required_argument, 0, 'T'},
+	{"debugfs",       required_argument, 0, 'm'},
+	{"workdir",       required_argument, 0, 'w'},
+	{"process",       required_argument, 0, 'p'},
 	{"daemon",        no_argument,       0, 'z'},
 	{"documentation", no_argument,       0, 'D'},
 	{"help",          no_argument,       0, 'h'},
@@ -123,7 +145,7 @@ int opts_parse(int argc, char **argv, struct opts *opts) {
 	while (1) {
 		int option_index = 0;
 		int c = getopt_long(argc, argv,
-			"v:T:zDuhV",
+			"v:T:m:p:w:zDuhV",
 			long_options,
 			&option_index);
 		/* Detect the end of the options. */
@@ -133,9 +155,9 @@ int opts_parse(int argc, char **argv, struct opts *opts) {
 		parsed_options++;
 	}
 
-	/* Handle any remaining command line opts (not options). */
+	/* Handle any remaining command line arguments (not options). */
 	if (optind < argc) {
-		perror("etrace: Too many opts, etrace takes only options.\n");
+		perror("etrace: Too many arguments, etrace takes only options.\n");
 		fflush(stderr);
 		opts_help(stderr, HELP_TRY | HELP_EXIT_ERR);
 	}

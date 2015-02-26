@@ -30,7 +30,6 @@
 #include "opts.h"
 #include "config.h"
 
-
 const char *program_version = "etrace " VERSION;
 
 void opts_help(FILE* file, int flags) {
@@ -39,6 +38,9 @@ void opts_help(FILE* file, int flags) {
 			"Usage: etrace [-DzhuV]\n"
 			"            [-T time] [--period=time]\n"
 			"            [-v level] [--verbosity=level] \n"
+			"            [-m path] [--debugfs=path] \n"
+			"            [-w path] [--workdir=path] \n"
+			"            [-p pid] [--process=pid] \n"
 			"            [--documentation]\n"
 			"            [--help] [--usage] [--version]\n");
 		fflush(file);
@@ -50,11 +52,10 @@ void opts_help(FILE* file, int flags) {
 			"\n"
 			"Generic options:\n"
 			"  -D, --documentation        Output full documentation, then exit\n"
-			"  -T, --period=time          Period-/on-time. In normal mode:\n"
-			"                             Period-time in uS. -1 equals event-driven output.\n"
-			"                             In \"synchronous strobe mode\":\n"
-			"                             Time represents on-time and period is on+off time\n"
-			"                             Default: ["xstr(DEF_PRD_OR_ON)"] uS\n"
+			"  -T, --period=time          Period-/ harvest-time in uS ("xstr(DEF_PTIME)")\n"
+			"  -m, --debugfs=path         Debugfs mount-point path ("xstr(DEF_DEBUGFS_PATH)")\n"
+			"  -w, --workdir=path         Workdir, also output directory ("xstr(DEF_WORKDIR)")\n"
+			"  -p, --process=pid          Process-id to track. MANDATORY - NO DEFAULT\n"
 			"  -v, --verbosity            Set the verbosity level.\n"
 			"                             Levels, listed in increasing verbosity, are:\n"
 			"                             critical, error, warning, info, debug, verbose\n"

@@ -1,6 +1,24 @@
 cmake_minimum_required (VERSION 2.6)
 project (etrace C)
 
+################################################################################
+# Configuration options
+################################################################################
+set(DEF_DEBUGFS_PATH
+	"/sys/kernel/debug"
+	CACHE STRING
+	"Default path to where debugfs is mounted")
+
+set(DEF_WORKDIR
+	"./"
+	CACHE STRING
+	"Default workdir/where output is placed")
+
+set(DEF_PTIME
+	"1000"
+	CACHE STRING
+	"Default harvest time (uS)")
+
 #SET(BUILD_PARAVIEW_PLUGIN ON CACHE STRING "Build Paraview plugin?" FORCE)
 set(SYSROOT
 	${CMAKE_SYSROOT}
@@ -13,6 +31,7 @@ option(ENABLE_LOGGING
 
 option(ENABLE_SYSLOG
     "Enable logging to syslog (Linux/OSX)" OFF)
+################################################################################
 
 if (NOT SYSROOT STREQUAL "")
 	message( "** INFO: SYSROOT was either set or defaulted from toolchain file" )

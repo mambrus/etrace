@@ -22,7 +22,11 @@
 
 #ifndef opts_h
 #define opts_h
+#include <limits.h>
+#include <sys/types.h>
+
 #include <log.h>
+#include "config.h"
 
 #define HELP_USAGE     1
 #define HELP_LONG      2
@@ -31,7 +35,15 @@
 #define HELP_EXIT     16
 #define HELP_EXIT_ERR 32
 
-#define DEF_PTIME		1000
+#ifndef DEF_PTIME
+#define DEF_PTIME			1000
+#endif
+#ifndef DEF_DEBUGFS_PATH
+#define DEF_DEBUGFS_PATH	"/sys/kernel/debug"
+#endif
+#ifndef DEF_WORKDIR
+#define DEF_WORKDIR			"./"
+#endif
 
 #define xstr(S) str(S)
 #define str(S) #S
@@ -41,12 +53,16 @@ struct opts
 {
 	log_level loglevel;
 	unsigned ptime;
+	char debugfs_path[PATH_MAX];
+	char workdir[PATH_MAX];
+	pid_t pid;
 	int daemon;
 };
 
 #include <stdio.h>
 void opts_help(FILE* file, int flags);
 int opts_parse(int argc, char **argv, struct opts *);
+int opts_check(const struct opts *);
 
 #endif //opts_h
 

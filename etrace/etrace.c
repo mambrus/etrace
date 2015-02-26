@@ -6,6 +6,9 @@
 struct opts opts = {
 	.loglevel		= DEF_LOG_LEVEL,
 	.ptime			= DEF_PTIME,
+	.debugfs_path   = DEF_DEBUGFS_PATH,
+	.workdir   		= DEF_WORKDIR,
+	.pid   			= 0,
 	.daemon			= 0
 };
 
@@ -13,6 +16,7 @@ int main(int argc, char ** argv) {
 	int rc;
 
 	rc=opts_parse(argc, argv, &opts);
+	LOGI("Parsed %d options\n",rc);
 
 	printf("Hello world: v%s \n", VERSION );
 	//log_set_verbosity(LOG_LEVEL_VERBOSE);
