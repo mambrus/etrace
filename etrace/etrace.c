@@ -17,6 +17,7 @@ int main(int argc, char ** argv) {
 
 	rc=opts_parse(argc, argv, &opts);
 	LOGI("Parsed %d options\n",rc);
+	rc=opts_check(&opts);
 
 	printf("Hello world: v%s \n", VERSION );
 	//log_set_verbosity(LOG_LEVEL_VERBOSE);
