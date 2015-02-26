@@ -22,6 +22,7 @@
 
 #ifndef opts_h
 #define opts_h
+#include <log.h>
 
 #define HELP_USAGE     1
 #define HELP_LONG      2
@@ -38,7 +39,7 @@
 /* General opts */
 struct opts
 {
-	int loglevel;
+	log_level loglevel;
 	unsigned ptime;
 	int daemon;
 };

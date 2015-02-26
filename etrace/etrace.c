@@ -3,7 +3,7 @@
 #include "log.h"
 #include "opts.h"
 
-static struct opts opts = {
+struct opts opts = {
 	.loglevel		= DEF_LOG_LEVEL,
 	.ptime			= DEF_PTIME,
 	.daemon			= 0

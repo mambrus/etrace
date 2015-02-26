@@ -9,7 +9,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <opts.h>
+
 #define ENV_LOG_LEVEL "LOG_LEVEL"
+extern struct opts opts;
 
 int log_getenv_loglevel(void) {
     int log_level = DEF_LOG_LEVEL;
@@ -52,12 +55,12 @@ log_level str2loglevel(const char *str, int *ok)
     return level;
 }
 
-static log_level filter_level = LOG_LEVEL_INFO;
+static log_level *filter_level = &opts.loglevel;
 
 void log_write(log_level level, const char *format, ...)
 {
     /* Only process this message if its level exceeds the current threshold */
-    if (level >= filter_level)
+    if (level >= *filter_level)
     {
         va_list args;
 
@@ -110,5 +113,5 @@ void log_write(log_level level, const char *format, ...)
 
 void log_set_verbosity(log_level level)
 {
-    filter_level = level;
+    *filter_level = level;
 }
