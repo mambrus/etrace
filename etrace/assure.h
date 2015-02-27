@@ -1,8 +1,9 @@
 /***************************************************************************
- *   Copyright (C) 2006 by Michael Ambrus                                  *
- *   ambrmi09@gmail.com                                                    *
+ *   Copyright (C) 2006 by Michael Ambrus <ambrmi09@gmail.com>             *
+ *   Copyright (C) 2015 by Michael Ambrus <ambrmi09@gmail.com>             *
  *                                                                         *
- *   This file originated from the TinKer project                          *
+ *   This file originates from the TinKer project:                         *
+ *   https://github.com/mambrus/tinker                                     *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
  *   it under the terms of the GNU General Public License as published by  *
@@ -37,8 +38,8 @@
  *              CPU.
  */
 
-#ifndef assert_np_h
-#define assert_np_h
+#ifndef assure_h
+#define assure_h
 #include <assert.h>
 #include <stdlib.h>
 
@@ -84,5 +85,79 @@ accepts returning with code, and that the code means error */
 	}                                                      \
 )
 #endif
-#endif /* assert_np_h */
+
+/*****************************************************************************
+   Use of the assert_* macros is discouraged as they will be discontinued.
+   Use the following for new code instead.
+ *****************************************************************************/
+#define _STR(x) #x
+#define STR(x) _STR(x)
+
+#if __STDC_VERSION__ < 199901L
+# if __GNUC__ >= 2
+#  define __func__ __FUNCTION__
+# endif
+#endif
+
+#if defined(__PRETTY_FUNCTION__)
+#define _FNC __PRETTY_FUNCTION__
+#elif defined (__FUNCTION__)
+#define _FNC __FUNCTION__
+#elif defined (__func__)
+#define _FNC __func__
+#elif defined (_func_)
+#define _FNC _func_
+#endif
+
+#ifdef _FNC
+#define FNC _FNC
+#else
+#define FNC NULL
+#endif
+
+static inline void notify_failure(
+        char *sassure, const char *sfun, char *sfile, int iline) {
+#if LOGGING_ENABLED
+#  ifdef LOG_INCLUDE_FILE_INFO
+    if (sfun!=NULL)
+        log_error("%s failed in [%s]\n", sassure, sfun);
+    else
+        log_error("%s failed\n", sassure);
+#  else
+    if (sfun!=NULL)
+        log_error("%s failed in [%s] @ [%s:%d]\n", sassure,
+                sfun, sfile, iline);
+    else
+        log_error("%s failed @ [%s:%d]\n", sassure,
+                sfile, iline);
+#  endif
+#else
+    if (sfun!=NULL)
+        fprintf(stderr, "ERROR: %s failed in [%s] @ [%s:%d]\n", sassure,
+                sfun, sfile, iline);
+    else
+        fprintf(stderr, "ERROR: %s failed @ [%s:%d]\n", sassure,
+                sfile, iline);
+    fflush(stderr);
+#endif
+}
+
+#define FLE strrchr(__FILE__, '/') ? strrchr(__FILE__, '/') + 1 : __FILE__
+#ifndef __GNUC__
+# define ASSURE(p) ((p) ? (void)0 : (void) notify_failure( \
+    #p, FNC, FLE, __LINE__ ) )
+# define ASSURE_E(p,e) if (!(p)) {(void) notify_failure( \
+    #p, FNC, FLE, __LINE__ ); e;}
+# define TRUEDO(p,e) if (p) {(void) notify_failure( \
+    #p, FNC, FLE, __LINE__ ); e;}
+#else
+# define ASSURE(p) ((p) ? (void)0 : (void) notify_failure( \
+    #p, __FUNCTION__, FLE, __LINE__ ) )
+# define ASSURE_E(p,e) if (!(p)) {(void) notify_failure( \
+    #p, __FUNCTION__, FLE, __LINE__ ); e;}
+# define TRUEDO(p,e) if (p) {(void) notify_failure( \
+    #p, __FUNCTION__, FLE, __LINE__ ); e;}
+#endif
+
+#endif /* assure_h */
 
