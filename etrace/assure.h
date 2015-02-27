@@ -21,75 +21,65 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
-/* Lazy error-handling based on variations of assert  */
-
-/*
- * Like in assert, these macros can be re-assigned and the listen to the
- * same NDEBUG compilation, but differently from assert, they have a
- * different behavior on error when NDEBUG is set.
- *
- * assert_ign - Do the stuff inside the brackets, but ignore handling the
- *              result.
- * assert_np  - same as assert_ign. Comparability reasons only.
- * assert_ret - Returns from function with the result. Assumes the function
- *              returns error-codes. Think twice before use.
- * assert_ext - Same as assert, but don't listen to NDEBUG - always assert.
- *              This is a safe macro to use, but might consume unnecessary
- *              CPU.
- */
-
-#ifndef assure_h
-#define assure_h
-#include <assert.h>
+/***************************************************************************
+   Static inline functions. Need to be outside normal #ifndef file_h trap
+ ***************************************************************************/
 #include <stdlib.h>
 
-#ifndef NDEBUG
-#  define assert_ign assert
-#  define assert_np  assert
-#  define assert_ret assert
-#  define assert_ext assert
+#include <log.h>
+#include "config.h"
+static inline void notify_failure(
+        char *sassure, const char *sfun, char *sfile, int iline)
+{
+#ifdef ENABLE_LOGGING
+#  ifdef LOG_INCLUDE_FILE_INFO
+    if (sfun!=NULL)
+        LOGE("%s failed in [%s]\n", sassure, sfun);
+    else
+        LOGE("%s failed\n", sassure);
+#  else
+    if (sfun!=NULL)
+        LOGE("%s failed in [%s] @ [%s:%d]\n", sassure,
+                sfun, sfile, iline);
+    else
+        LOGE("%s failed @ [%s:%d]\n", sassure,
+                sfile, iline);
+#  endif
 #else
-#include <stdio.h>
-static inline void assertfail(char *assertstr, char *filestr, int line) {
-
-		fprintf(stderr,"assert_ext: \"%s\" %s:%d\n",
-			assertstr, filestr, line);
-		/* Generate coredump */
-		fprintf(stderr,"Calling abort() for coredump \n");
-		abort();
-		fprintf(stderr,"Abort failed. Null-pointer assignement for coredump \n");
-		/* Should never return, but just in case lib is broken (Android?)
-		 * make a deliberate null pointer assignment */
-		*((int *)NULL) = 1;
+    if (sfun!=NULL)
+        fprintf(stderr, "ERROR: %s failed in [%s] @ [%s:%d]\n", sassure,
+                sfun, sfile, iline);
+    else
+        fprintf(stderr, "ERROR: %s failed @ [%s:%d]\n", sassure,
+                sfile, iline);
+    fflush(stderr);
+#endif
 }
 
-/* Do the stuff, just ignore acting on the result. */
-#  define assert_np(p) (p)
-#  define assert_ign assert_np
+static inline void assertfail(char *assertstr, 
+        char *filestr, const char *sfun, int line)
+{
+    notify_failure(assertstr, sfun, filestr, line);
 
-/* Mimic assert real behavior when NDEBUG is not set. I.e. always act. */
-
-#  define assert_ext(p) ((p) ? (void)0 : (void) assertfail( \
-		#p, __FILE__, __LINE__ ) )
-
-/* Lazy error-handling. Careful using this. Assumes function invoked from
-accepts returning with code, and that the code means error */
-#  define assert_ret(p) (                                  \
-	{                                                      \
-		int rc = (p);                                      \
-                                                           \
-		rc ? (void)0 :                                     \
-		fprintf(stderr,"assert_ex %s (%s:%d)\n",           \
-			#p, __FILE__, __LINE__ );                      \
-		exit(rc);                                          \
-	}                                                      \
-)
+#ifndef NDEBUG
+    /* Generate coredump */
+    fprintf(stderr,"Calling abort() for coredump \n");
+    abort();
+    fprintf(stderr,"Abort failed. Null-pointer assignement for coredump \n");
+    /* Should never return, but just in case lib is broken (Android?)
+     * make a deliberate null pointer assignment */
+    *((int *)NULL) = 1;
+#else
+    fprintf(stderr,"Exit with failure\n");
+    exit(1);
 #endif
+}
 
-/*****************************************************************************
-   Use of the assert_* macros is discouraged as they will be discontinued.
-   Use the following for new code instead.
- *****************************************************************************/
+/***************************************************************************/
+#ifndef assure_h
+#define assure_h
+/***************************************************************************/
+
 #define _STR(x) #x
 #define STR(x) _STR(x)
 
@@ -114,33 +104,23 @@ accepts returning with code, and that the code means error */
 #else
 #define FNC NULL
 #endif
-
-static inline void notify_failure(
-        char *sassure, const char *sfun, char *sfile, int iline) {
-#if LOGGING_ENABLED
-#  ifdef LOG_INCLUDE_FILE_INFO
-    if (sfun!=NULL)
-        log_error("%s failed in [%s]\n", sassure, sfun);
-    else
-        log_error("%s failed\n", sassure);
-#  else
-    if (sfun!=NULL)
-        log_error("%s failed in [%s] @ [%s:%d]\n", sassure,
-                sfun, sfile, iline);
-    else
-        log_error("%s failed @ [%s:%d]\n", sassure,
-                sfile, iline);
-#  endif
-#else
-    if (sfun!=NULL)
-        fprintf(stderr, "ERROR: %s failed in [%s] @ [%s:%d]\n", sassure,
-                sfun, sfile, iline);
-    else
-        fprintf(stderr, "ERROR: %s failed @ [%s:%d]\n", sassure,
-                sfile, iline);
-    fflush(stderr);
-#endif
-}
+/***************************************************************************
+ * ASSURE* / TRUEDO* macros
+ ***************************************************************************
+ *
+ * ASSURE     - Use as assert with the difference that it ignores NDEBUG.
+ *              I.e. code inside '(' ')' will never be optimized away.
+ * ASSURE_E   - Same as above, but has a dedicated exit ability instead of
+ *              aborting (second argument). This can be call to (error)
+ *              handling function or semantics like "goto" and "return"
+ * TRUEDO     - Same as ASSURE, but with inverse logic. I.e. on "true" it
+ *                 will abort.
+ *              I.e. code inside '(' ')' will never be optimized away.
+ * TRUEDO_E   - Same as above, ASSURE_E but with same inverse logic as
+ *                 TRUEDO.
+ *
+ ***************************************************************************/
+#include <string.h>
 
 #define FLE strrchr(__FILE__, '/') ? strrchr(__FILE__, '/') + 1 : __FILE__
 #ifndef __GNUC__
@@ -158,6 +138,54 @@ static inline void notify_failure(
 # define TRUEDO(p,e) if (p) {(void) notify_failure( \
     #p, __FUNCTION__, FLE, __LINE__ ); e;}
 #endif
+
+/***************************************************************************
+ * assrt_* macros
+ ***************************************************************************
+ *
+ * assert_np  - This macro does exactly and what assert does, except that if
+ *              NDEBUG is defined it will NOT remove arg. I.e. it is a safe
+ *              macro to use instead of assert as replacement
+ *
+ *              This is a good macro checking return values until design
+ *              rigid enough when that isn't needed anymore, when handling
+ *              any failure is ignored (by setting NDEBUG).
+ *
+ * assert_ret - Returns from function with the result. Assumes the function
+ *              returns error-codes. Think twice before using this.
+ *
+ * assert_ext - Same as assert, but handles NDEBUG differently. If NDEBUG is
+ *              set, it mimics assert. If not, it exits with a failure.
+ *              Either way it always terminates execution.
+ *
+ ***************************************************************************
+   Use of the assert_* macros is discouraged as they will be discontinued.
+   Use the for new ASSURE* / TRUEDO* macros instead.
+ ***************************************************************************/
+
+#include <stdio.h>
+
+#ifndef NDEBUG
+#include <assert.h>
+#  define assert_np assert
+#else
+#  define assert_np(p) (p)
+#endif
+
+#define assert_ext(p) ((p) ? (void)0 : (void) assertfail( \
+        #p, __FILE__, FNC, __LINE__ ) )
+
+/* Lazy error-handling. Careful using this. Assumes function invoked from
+accepts returning with code, and that the code means error */
+#  define assert_ret(p) (                                  \
+    {                                                      \
+        int rc = (p);                                      \
+                                                           \
+        rc ? (void)0 : (void) notify_failure(              \
+            #p, __FUNCTION__, FLE, __LINE__ );             \
+        return rc;                                         \
+    }                                                      \
+)
 
 #endif /* assure_h */
 
