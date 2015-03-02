@@ -123,34 +123,38 @@ static void opts_parse_opt(const char *cmd,
 }
 
 static struct option long_options[] = {
-    {"verbosity", required_argument, 0, 'v'},
-    {"period", required_argument, 0, 'T'},
-    {"debugfs", required_argument, 0, 'm'},
-    {"workdir", required_argument, 0, 'w'},
-    {"process", required_argument, 0, 'p'},
-    {"daemon", no_argument, 0, 'z'},
-    {"documentation", no_argument, 0, 'D'},
-    {"help", no_argument, 0, 'h'},
-    {"usage", no_argument, 0, 'u'},
-    {"version", no_argument, 0, 'V'},
-    {0, 0, 0, 0}
+/* *INDENT-OFF* */
+    {"verbosity",      required_argument,  0,  'v'},
+    {"period",         required_argument,  0,  'T'},
+    {"debugfs",        required_argument,  0,  'm'},
+    {"workdir",        required_argument,  0,  'w'},
+    {"process",        required_argument,  0,  'p'},
+    {"daemon",         no_argument,        0,  'z'},
+    {"documentation",  no_argument,        0,  'D'},
+    {"help",           no_argument,        0,  'h'},
+    {"usage",          no_argument,        0,  'u'},
+    {"version",        no_argument,        0,  'V'},
+    {0,                0,                  0,  0}
+/* *INDENT-ON* */
 };
 
 /* Additional structure to keep track of mandatory options. Each entry-index
  * should correspond exactly to long_options. Therefore keep tables close.
  */
 static struct req_opt req_opts[] = {
-    {'v', not_req, at_least, 0},
-    {'T', not_req, precisely, 0},
-    {'m', not_req, precisely, 0},
-    {'w', not_req, precisely, 0},
-    {'p', mandatory, at_least, 0},
-    {'z', not_req, precisely, 0},
-    {'D', not_req, at_least, 0},
-    {'h', not_req, at_least, 0},
-    {'u', not_req, at_least, 0},
-    {'V', not_req, at_least, 0},
-    {0, 0, 0, 0}
+/* *INDENT-OFF* */
+    {'v',  not_req,    at_least,   0},
+    {'T',  not_req,    precisely,  0},
+    {'m',  not_req,    precisely,  0},
+    {'w',  not_req,    precisely,  0},
+    {'p',  mandatory,  at_least,   0},
+    {'z',  not_req,    precisely,  0},
+    {'D',  not_req,    at_least,   0},
+    {'h',  not_req,    at_least,   0},
+    {'u',  not_req,    at_least,   0},
+    {'V',  not_req,    at_least,   0},
+    {0,    0,          0,          0}
+/* *INDENT-ON* */
 };
 
 struct req_opt *req_opt(int val)

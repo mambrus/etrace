@@ -8,12 +8,14 @@
 #include "opts.h"
 
 struct opts opts = {
-    .loglevel = DEF_LOG_LEVEL,
-    .ptime = DEF_PTIME,
-    .debugfs_path = DEF_DEBUGFS_PATH,
-    .workdir = DEF_WORKDIR,
-    .pid = 0,
-    .daemon = 0
+/* *INDENT-OFF* */
+    .loglevel       = DEF_LOG_LEVEL,
+    .ptime          = DEF_PTIME,
+    .debugfs_path   = DEF_DEBUGFS_PATH,
+    .workdir        = DEF_WORKDIR,
+    .pid            = 0,
+    .daemon         = 0
+/* *INDENT-ON* */
 };
 
 int main(int argc, char **argv)
