@@ -4,6 +4,7 @@
 
 static char etrace_doc[] = CLI_CMD_HELPTEXT_calibrate;
 
-void doc_print() {
-	printf("%s\n",etrace_doc);
+void doc_print()
+{
+    printf("%s\n", etrace_doc);
 }

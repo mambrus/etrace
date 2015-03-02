@@ -14,7 +14,8 @@
 #define ENV_LOG_LEVEL "LOG_LEVEL"
 extern struct opts opts;
 
-int log_getenv_loglevel(void) {
+int log_getenv_loglevel(void)
+{
     int log_level = DEF_LOG_LEVEL;
 
     if ((getenv(ENV_LOG_LEVEL) != NULL)
@@ -22,7 +23,7 @@ int log_getenv_loglevel(void) {
 
         int valid_value;
 
-        log_level = str2loglevel(getenv(ENV_LOG_LEVEL),&valid_value);
+        log_level = str2loglevel(getenv(ENV_LOG_LEVEL), &valid_value);
         if (!valid_value) {
             log_level = DEF_LOG_LEVEL;
         }
@@ -60,8 +61,7 @@ static log_level *filter_level = &opts.loglevel;
 void log_write(log_level level, const char *format, ...)
 {
     /* Only process this message if its level exceeds the current threshold */
-    if (level >= *filter_level)
-    {
+    if (level >= *filter_level) {
         va_list args;
 
         /* Write the log message */

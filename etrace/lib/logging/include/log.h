@@ -5,13 +5,13 @@
  * Severity levels for logging functions
  */
 typedef enum {
-    LOG_LEVEL_VERBOSE,  /* Verbose level logging */
-    LOG_LEVEL_DEBUG,    /* Debug level logging */
-    LOG_LEVEL_INFO,     /* Information level logging */
-    LOG_LEVEL_WARNING,  /* Warning level logging */
-    LOG_LEVEL_ERROR,    /* Error level logging */
-    LOG_LEVEL_CRITICAL, /* Fatal error level logging */
-    LOG_LEVEL_SILENT    /* No output */
+    LOG_LEVEL_VERBOSE,          /* Verbose level logging */
+    LOG_LEVEL_DEBUG,            /* Debug level logging */
+    LOG_LEVEL_INFO,             /* Information level logging */
+    LOG_LEVEL_WARNING,          /* Warning level logging */
+    LOG_LEVEL_ERROR,            /* Error level logging */
+    LOG_LEVEL_CRITICAL,         /* Fatal error level logging */
+    LOG_LEVEL_SILENT            /* No output */
 } log_level;
 
 #ifdef LOG_SYSLOG_ENABLED
@@ -40,4 +40,4 @@ int log_getenv_loglevel(void);
 #define LOGW log_warning
 #define LOGE log_error
 
-#endif //log_h
+#endif                          //log_h

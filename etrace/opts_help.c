@@ -32,63 +32,62 @@
 
 const char *program_version = "etrace " VERSION;
 
-void opts_help(FILE* file, int flags) {
-	if (file && flags & HELP_USAGE) {
-		fprintf(file, "%s",
-			"Usage: etrace [-DzhuV]\n"
-			"            [-T time] [--period=time]\n"
-			"            [-v level] [--verbosity=level] \n"
-			"            [-m path] [--debugfs=path] \n"
-			"            [-w path] [--workdir=path] \n"
-			"            [-p pid] [--process=pid] \n"
-			"            [--documentation]\n"
-			"            [--help] [--usage] [--version]\n");
-		fflush(file);
-	}
-	if (file && flags & HELP_LONG) {
-		fprintf(file, "%s",
-			"Usage: etrace [OPTION...] \n"
-			"etrace command line ftrace-events utility ("VERSION").\n"
-			"\n"
-			"Generic options:\n"
-			"  -D, --documentation        Output full documentation, then exit\n"
-			"  -T, --period=time          Period-/ harvest-time in uS ("xstr(DEF_PTIME)")\n"
-			"  -m, --debugfs=path         Debugfs mount-point path ("xstr(DEF_DEBUGFS_PATH)")\n"
-			"  -w, --workdir=path         Workdir, also output directory ("xstr(DEF_WORKDIR)")\n"
-			"  -p, --process=pid          Process-id to track. MANDATORY - NO DEFAULT\n"
-			"  -v, --verbosity            Set the verbosity level.\n"
-			"                             Levels, listed in increasing verbosity, are:\n"
-			"                             critical, error, warning, info, debug, verbose\n"
-			"Special:\n"
-			"  -z, --daemon               Run as a daemon\n"
-			"  -h, --help                 Print this help\n"
-			"  -u, --usage                Give a short usage message\n"
-			"  -V, --version              Print program version\n"
-			"\n"
-			"Mandatory or optional arguments to long options are also mandatory or optional\n"
-			"for any corresponding short options.\n"
-			"\n"
-			"Read the manual by passing the -D option\n"
-			"\n"
-			"Report bugs to <michael.ambrus@sonymobile.com>.\n");
-		fflush(file);
-	}
+void opts_help(FILE *file, int flags)
+{
+    if (file && flags & HELP_USAGE) {
+        fprintf(file, "%s",
+                "Usage: etrace [-DzhuV]\n"
+                "            [-T time] [--period=time]\n"
+                "            [-v level] [--verbosity=level] \n"
+                "            [-m path] [--debugfs=path] \n"
+                "            [-w path] [--workdir=path] \n"
+                "            [-p pid] [--process=pid] \n"
+                "            [--documentation]\n"
+                "            [--help] [--usage] [--version]\n");
+        fflush(file);
+    }
+    if (file && flags & HELP_LONG) {
+        fprintf(file, "%s",
+                "Usage: etrace [OPTION...] \n"
+                "etrace command line ftrace-events utility (" VERSION ").\n"
+                "\n"
+                "Generic options:\n"
+                "  -D, --documentation        Output full documentation, then exit\n"
+                "  -T, --period=time          Period-/ harvest-time in uS ("
+                xstr(DEF_PTIME) ")\n"
+                "  -m, --debugfs=path         Debugfs mount-point path ("
+                xstr(DEF_DEBUGFS_PATH) ")\n"
+                "  -w, --workdir=path         Workdir, also output directory ("
+                xstr(DEF_WORKDIR) ")\n"
+                "  -p, --process=pid          Process-id to track. MANDATORY - NO DEFAULT\n"
+                "  -v, --verbosity            Set the verbosity level.\n"
+                "                             Levels, listed in increasing verbosity, are:\n"
+                "                             critical, error, warning, info, debug, verbose\n"
+                "Special:\n" "  -z, --daemon               Run as a daemon\n"
+                "  -h, --help                 Print this help\n"
+                "  -u, --usage                Give a short usage message\n"
+                "  -V, --version              Print program version\n" "\n"
+                "Mandatory or optional arguments to long options are also mandatory or optional\n"
+                "for any corresponding short options.\n" "\n"
+                "Read the manual by passing the -D option\n" "\n"
+                "Report bugs to <michael.ambrus@sonymobile.com>.\n");
+        fflush(file);
+    }
 
-	if (file && flags & HELP_VERSION) {
-		fprintf(file, "%s\n", program_version);
-		fflush(file);
-	}
+    if (file && flags & HELP_VERSION) {
+        fprintf(file, "%s\n", program_version);
+        fflush(file);
+    }
 
-	if (file && flags & HELP_TRY) {
-		fprintf(file, "%s",
-			"Try `etrace --help' or `etrace --usage' for more information.\n");
-		fflush(file);
-	}
+    if (file && flags & HELP_TRY) {
+        fprintf(file, "%s",
+                "Try `etrace --help' or `etrace --usage' for more information.\n");
+        fflush(file);
+    }
 
-	if (file && flags & HELP_EXIT)
-		exit(0);
+    if (file && flags & HELP_EXIT)
+        exit(0);
 
-	if (file && flags & HELP_EXIT_ERR)
-		exit(1);
+    if (file && flags & HELP_EXIT_ERR)
+        exit(1);
 }
-

@@ -18,7 +18,7 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
-/* Options and opts */ 
+/* Options and opts */
 
 #ifndef opts_h
 #define opts_h
@@ -49,20 +49,18 @@
 #define str(S) #S
 
 /* General opts */
-struct opts
-{
-	log_level loglevel;
-	unsigned ptime;
-	char debugfs_path[PATH_MAX];
-	char workdir[PATH_MAX];
-	pid_t pid;
-	int daemon;
+struct opts {
+    log_level loglevel;
+    unsigned ptime;
+    char debugfs_path[PATH_MAX];
+    char workdir[PATH_MAX];
+    pid_t pid;
+    int daemon;
 };
 
 #include <stdio.h>
-void opts_help(FILE* file, int flags);
+void opts_help(FILE *file, int flags);
 int opts_parse(int argc, char **argv, struct opts *);
 int opts_check(const struct opts *);
 
-#endif //opts_h
-
+#endif                          //opts_h

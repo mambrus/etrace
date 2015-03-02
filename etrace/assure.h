@@ -28,49 +28,46 @@
 
 #include <log.h>
 #include "config.h"
-static inline void notify_failure(
-        char *sassure, const char *sfun, char *sfile, int iline)
+static inline void notify_failure(char *sassure, const char *sfun, char *sfile,
+                                  int iline)
 {
 #ifdef ENABLE_LOGGING
 #  ifdef LOG_INCLUDE_FILE_INFO
-    if (sfun!=NULL)
+    if (sfun != NULL)
         LOGE("%s failed in [%s]\n", sassure, sfun);
     else
         LOGE("%s failed\n", sassure);
 #  else
-    if (sfun!=NULL)
-        LOGE("%s failed in [%s] @ [%s:%d]\n", sassure,
-                sfun, sfile, iline);
+    if (sfun != NULL)
+        LOGE("%s failed in [%s] @ [%s:%d]\n", sassure, sfun, sfile, iline);
     else
-        LOGE("%s failed @ [%s:%d]\n", sassure,
-                sfile, iline);
+        LOGE("%s failed @ [%s:%d]\n", sassure, sfile, iline);
 #  endif
 #else
-    if (sfun!=NULL)
+    if (sfun != NULL)
         fprintf(stderr, "ERROR: %s failed in [%s] @ [%s:%d]\n", sassure,
                 sfun, sfile, iline);
     else
-        fprintf(stderr, "ERROR: %s failed @ [%s:%d]\n", sassure,
-                sfile, iline);
+        fprintf(stderr, "ERROR: %s failed @ [%s:%d]\n", sassure, sfile, iline);
     fflush(stderr);
 #endif
 }
 
-static inline void assertfail(char *assertstr, 
-        char *filestr, const char *sfun, int line)
+static inline void assertfail(char *assertstr,
+                              char *filestr, const char *sfun, int line)
 {
     notify_failure(assertstr, sfun, filestr, line);
 
 #ifndef NDEBUG
     /* Generate coredump */
-    fprintf(stderr,"Calling abort() for coredump \n");
+    fprintf(stderr, "Calling abort() for coredump \n");
     abort();
-    fprintf(stderr,"Abort failed. Null-pointer assignement for coredump \n");
+    fprintf(stderr, "Abort failed. Null-pointer assignement for coredump \n");
     /* Should never return, but just in case lib is broken (Android?)
      * make a deliberate null pointer assignment */
     *((int *)NULL) = 1;
 #else
-    fprintf(stderr,"Exit with failure\n");
+    fprintf(stderr, "Exit with failure\n");
     exit(1);
 #endif
 }
@@ -187,5 +184,4 @@ accepts returning with code, and that the code means error */
     }                                                      \
 )
 
-#endif /* assure_h */
-
+#endif                          /* assure_h */
