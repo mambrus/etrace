@@ -1,6 +1,10 @@
 #include <stdio.h>
 #include <config.h>
-#include "log.h"
+
+//#undef NDEBUG
+#define NDEBUG
+#include "assure.h"
+#include <log.h>
 #include "opts.h"
 
 struct opts opts = {
@@ -12,12 +16,13 @@ struct opts opts = {
 	.daemon			= 0
 };
 
+
 int main(int argc, char ** argv) {
 	int rc;
 
 	rc=opts_parse(argc, argv, &opts);
 	LOGI("Parsed %d options\n",rc);
-	rc=opts_check(&opts);
+	assert_ext(opts_check(&opts) == 1);
 
 	printf("Hello world: v%s \n", VERSION );
 	//log_set_verbosity(LOG_LEVEL_VERBOSE);
