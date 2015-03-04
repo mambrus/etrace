@@ -31,5 +31,6 @@ typedef enum {
 void set_clocktype(clock_type ct);
 int time_now(struct timeval *tv);
 struct timeval tv_diff(struct timeval t0, struct timeval t1);
+struct timeval tv_add(struct timeval t0, struct timeval t1);
 
 #endif                          /* define mtime_h */
