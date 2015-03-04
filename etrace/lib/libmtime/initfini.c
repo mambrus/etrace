@@ -3,6 +3,8 @@
 #include <limits.h>
 #include <string.h>
 #include <config.h>
+#include "include/mtime.h"
+
 #define __init __attribute__((constructor))
 #define __fini __attribute__((destructor))
 
@@ -20,6 +22,7 @@
 
 void __init __mtime_init(void)
 {
+	set_clocktype(KERNEL_CLOCK);
 }
 
 void __fini __mtime_fini(void)

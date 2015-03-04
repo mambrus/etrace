@@ -5,8 +5,8 @@ set(LIBTIME_SOURCE
 	time.c initfini.c
 )
 
-set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} -Wl,--undefined=__mtime_init")
-set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} -Wl,--undefined=__mtime_init")
+set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} -Wl,--undefined=__mtime_init -lrt")
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,--undefined=__mtime_init -Wl,-lrt")
 
 set(LIBTIME_SOURCE
 	${LIBTIME_SOURCE}

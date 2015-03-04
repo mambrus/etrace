@@ -6,7 +6,7 @@ set(LIBMLIST_SOURCE
 )
 
 set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} -Wl,--undefined=__mlist_init")
-set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} -Wl,--undefined=__mlist_init")
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,--undefined=__mlist_init")
 
 set(LIBMLIST_SOURCE
 	${LIBMLIST_SOURCE}

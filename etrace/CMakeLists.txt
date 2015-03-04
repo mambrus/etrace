@@ -57,20 +57,20 @@ set (EXTRA_LIBS ${EXTRA_LIBS} doc)
 if (ENABLE_LOGGING)
     include_directories ("${PROJECT_SOURCE_DIR}/lib/liblog/include")
     add_subdirectory (lib/liblog)
-	set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} -Wl,--undefined=__liblog_init")
+	set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,--undefined=__liblog_init")
 	set (EXTRA_LIBS ${EXTRA_LIBS} liblog)
 endif (ENABLE_LOGGING)
 
 # -Lists-
 include_directories ("${PROJECT_SOURCE_DIR}/lib/libmlist/include")
 add_subdirectory (lib/libmlist)
-	set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} -Wl,--undefined=__mlist_init")
+	set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,--undefined=__mlist_init")
 set (EXTRA_LIBS ${EXTRA_LIBS} libmlist)
 
 # -time-
 include_directories ("${PROJECT_SOURCE_DIR}/lib/libmtime/include")
 add_subdirectory (lib/libmtime)
-	set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} -Wl,--undefined=__mtime_init")
+	set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,--undefined=__mtime_init -Wl,-lrt")
 set (EXTRA_LIBS ${EXTRA_LIBS} libmtime)
 
 ################################################################################
@@ -101,4 +101,4 @@ set(ETRACE_SOURCE
 install(PROGRAMS ${PROJECT_BINARY_DIR}/etrace DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
 
 add_executable(etrace ${ETRACE_SOURCE})
-target_link_libraries (etrace ${EXTRA_LIBS})
+target_link_libraries (etrace ${EXTRA_LIBS} rt)
