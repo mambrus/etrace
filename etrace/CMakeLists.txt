@@ -70,7 +70,7 @@ set (EXTRA_LIBS ${EXTRA_LIBS} libmlist)
 # -time-
 include_directories ("${PROJECT_SOURCE_DIR}/lib/libmtime/include")
 add_subdirectory (lib/libmtime)
-	set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,--undefined=__mtime_init -Wl,-lrt")
+	set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,--undefined=__mtime_init")
 set (EXTRA_LIBS ${EXTRA_LIBS} libmtime)
 
 ################################################################################
@@ -101,4 +101,4 @@ set(ETRACE_SOURCE
 install(PROGRAMS ${PROJECT_BINARY_DIR}/etrace DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
 
 add_executable(etrace ${ETRACE_SOURCE})
-target_link_libraries (etrace ${EXTRA_LIBS} rt)
+target_link_libraries (etrace ${EXTRA_LIBS})
