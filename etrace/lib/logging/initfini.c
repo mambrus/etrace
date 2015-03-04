@@ -19,10 +19,14 @@
  * Keep log in to at least once per new build-/run-environment assert that
  * the mechanism works.
  */
+extern log_level log_filter_level;
 
 void __init __logging_init(void)
 {
-    int log_level = log_getenv_loglevel();
+    int log_level;
+
+    log_filter_level = DEF_LOG_LEVEL;   /* Global variable initializer, if missed */
+    log_level = log_getenv_loglevel();
 
     openlog(PROJ_NAME,
             LOG_CONS | LOG_NDELAY | LOG_NOWAIT | LOG_PERROR | LOG_PID,

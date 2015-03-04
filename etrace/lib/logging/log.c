@@ -11,7 +11,7 @@
 
 #define ENV_LOG_LEVEL "LOG_LEVEL"
 /*****************************************************************************/
-extern log_level *log_filter_level;
+extern log_level log_filter_level;
 /*****************************************************************************/
 
 int log_getenv_loglevel(void)
@@ -59,7 +59,7 @@ log_level str2loglevel(const char *str, int *ok)
 void log_write(log_level level, const char *format, ...)
 {
     /* Only process this message if its level exceeds the current threshold */
-    if (level >= *log_filter_level) {
+    if (level >= log_filter_level) {
         va_list args;
 
         /* Write the log message */
@@ -111,5 +111,5 @@ void log_write(log_level level, const char *format, ...)
 
 void log_set_verbosity(log_level level)
 {
-    *log_filter_level = level;
+    log_filter_level = level;
 }

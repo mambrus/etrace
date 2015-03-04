@@ -50,7 +50,7 @@
 
 /* General opts */
 struct opts {
-    log_level loglevel;
+    log_level *loglevel;
     unsigned ptime;
     char debugfs_path[PATH_MAX];
     char workdir[PATH_MAX];

@@ -63,10 +63,10 @@ static void opts_parse_opt(const char *cmd,
         case 'v':
             req_opt('v')->cnt++;
             if (arg[0] >= '0' && arg[0] <= '9')
-                opts->loglevel = arg ? atoi(arg) : 0;
+                *opts->loglevel = arg ? atoi(arg) : 0;
             else {
                 int ok;
-                opts->loglevel = str2loglevel(arg, &ok);
+                *opts->loglevel = str2loglevel(arg, &ok);
                 if (!ok)
                     LOGW("loglevel [%s] invalid. Falling back to default\n",
                          arg);
