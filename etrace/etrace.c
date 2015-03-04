@@ -18,6 +18,10 @@ struct opts opts = {
 /* *INDENT-ON* */
 };
 
+/* This binds when grobal variable initialization is run in .start, i.e.
+ * before CTOR */
+log_level *log_filter_level = &opts.loglevel;
+
 int main(int argc, char **argv)
 {
     int rc;
