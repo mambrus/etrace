@@ -25,12 +25,12 @@ set(SYSROOT
 	CACHE STRING
 	"System path (--system=)")
 
-# Enable any logging
+# Enable any liblog
 option(ENABLE_LOGGING
     "Enable log messages." ON)
 
 option(ENABLE_SYSLOG
-    "Enable logging to syslog (Linux/OSX)" OFF)
+    "Enable log to syslog (Linux/OSX)" OFF)
 ################################################################################
 
 if (NOT SYSROOT STREQUAL "")
@@ -46,18 +46,30 @@ set(CMAKE_C_FLAGS_DEBUG "${CFLAGS_SYSROOT} -no-integrated-cpp -Wno-unused-functi
 set(CMAKE_C_FLAGS_RELEASE "${CFLAGS_SYSROOT} -no-integrated-cpp -Wno-unused-function -g3 -ggdb3 -O0 -Wall")
 
 
-#Man-, help- and other generated pages
+################################################################################
+# Libraries (src binding)
+################################################################################
+# -Man-, help- and other generated pages
 include_directories ("${PROJECT_SOURCE_DIR}/doc/include")
 add_subdirectory (doc)
 set (EXTRA_LIBS ${EXTRA_LIBS} doc)
 
 if (ENABLE_LOGGING)
-    include_directories ("${PROJECT_SOURCE_DIR}/lib/logging/include")
-    add_subdirectory (lib/logging)
-	set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} -Wl,--undefined=__logging_init")
-	set (EXTRA_LIBS ${EXTRA_LIBS} logging)
+    include_directories ("${PROJECT_SOURCE_DIR}/lib/liblog/include")
+    add_subdirectory (lib/liblog)
+	set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} -Wl,--undefined=__liblog_init")
+	set (EXTRA_LIBS ${EXTRA_LIBS} liblog)
 endif (ENABLE_LOGGING)
 
+# -Lists-
+include_directories ("${PROJECT_SOURCE_DIR}/lib/libmlist/include")
+add_subdirectory (lib/libmlist)
+	set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} -Wl,--undefined=__mlist_init")
+set (EXTRA_LIBS ${EXTRA_LIBS} libmlist)
+
+################################################################################
+# Project
+################################################################################
 # The version number.
 set (etrace_VERSION_MAJOR 0)
 set (etrace_VERSION_MINOR 0)

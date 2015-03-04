@@ -20,7 +20,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <assert.h>
-#include "assert_np.h"
+#include <assure.h>
 #include <errno.h>
 #include <string.h>
 #include <sys/types.h>

@@ -21,7 +21,7 @@
  */
 extern log_level log_filter_level;
 
-void __init __logging_init(void)
+void __init __liblog_init(void)
 {
     int log_level;
 
@@ -36,7 +36,7 @@ void __init __logging_init(void)
     log_debug("%s %s: initializing\n", PROJ_NAME, VERSION);
 }
 
-void __fini __logging_fini(void)
+void __fini __liblog_fini(void)
 {
     int log_level = log_getenv_loglevel();
 
