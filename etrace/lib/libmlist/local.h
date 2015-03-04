@@ -31,11 +31,11 @@ int dstrct_mlist(const handle_t handle);
 
 /* Administrative keeper of all lists */
 struct mlistmod_struct {
-	int isinit;           /* Is this module initialized? I.e. does mlist
-							 below contain a valid pointer e.t.a.*/
-	int nlists;           /* Current number of lists in  list */
-	struct node *mlists;  /* List-head of lists. No need to sort to find.
-							 Handle is hash-key*/
+    int isinit;                 /* Is this module initialized? I.e. does mlist
+                                   below contain a valid pointer e.t.a. */
+    int nlists;                 /* Current number of lists in  list */
+    struct node *mlists;        /* List-head of lists. No need to sort to find.
+                                   Handle is hash-key */
 };
 
 /* Indicate to others that someone is keeping this as global module data
@@ -46,21 +46,20 @@ extern struct mlistmod_settings mlistmod_settings;
 /* Data of this struct is the payload for the mlist variable in mlistmod_struct.
  * It's the administrative keeper of each list. */
 struct listheader {
-	struct node *p;	      /* Current (file) pointer */
-	off_t o;              /* Offset from start (in jumps jumps) */
-	int nelem;            /* Current size of this list */
-	int pl_sz;            /* pay-load size */
-	struct listheader *owner; /* If this is a dup, will point to the
-						     original*/
-	int nr_links;         /* if duped, will be larger than 0, note dups can
-							 be duped*/
+    struct node *p;             /* Current (file) pointer */
+    off_t o;                    /* Offset from start (in jumps jumps) */
+    int nelem;                  /* Current size of this list */
+    int pl_sz;                  /* pay-load size */
+    struct listheader *owner;   /* If this is a dup, will point to the
+                                   original */
+    int nr_links;               /* if duped, will be larger than 0, note dups can
+                                   be duped */
 
-	/* Caller provided function used to search & sort list. Can be NULL if
-	 * search and sort is not supported */
-	int (*cmpfunc)(LDATA *lval, LDATA *rval);
-	struct node *phead;   /* List-start */
-	struct node *ptail;   /* List-end */
+    /* Caller provided function used to search & sort list. Can be NULL if
+     * search and sort is not supported */
+    int (*cmpfunc) (LDATA * lval, LDATA * rval);
+    struct node *phead;         /* List-start */
+    struct node *ptail;         /* List-end */
 };
 
-#endif /* libmlist_local_h */
-
+#endif                          /* libmlist_local_h */

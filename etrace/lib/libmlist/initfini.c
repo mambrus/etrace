@@ -17,7 +17,6 @@
  *   Free Software Foundation, Inc.,                                       *
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <assert.h>
@@ -30,66 +29,61 @@
 /* "Constructor" / "Destructor" */
 /*----------------------------------------------------------------------*/
 /* Module initializers */
-void __init __mlist_init(void) {
+void __init __mlist_init(void)
+{
 #ifdef INITFINI_SHOW
-	fprintf(stderr,">>> Running module _init in ["__FILE__"]\n"
-			">>> using CTORS/DTORS mechanism ====\n");
+    fprintf(stderr, ">>> Running module _init in [" __FILE__ "]\n"
+            ">>> using CTORS/DTORS mechanism ====\n");
 #endif
-	assert_ext(!mlistmod_data.isinit);
-	mlistmod_data.nlists = 0,
-	mlistmod_data.mlists = NULL,
-
-	mlistmod_data.isinit=1;
+    assert_ext(!mlistmod_data.isinit);
+    mlistmod_data.nlists = 0,
+        mlistmod_data.mlists = NULL, mlistmod_data.isinit = 1;
 }
 
-void __fini __mlist_fini(void) {
-	struct node *tnext;   /* Needed because race could happen */
+void __fini __mlist_fini(void)
+{
+    struct node *tnext;         /* Needed because race could happen */
 #ifdef INITFINI_SHOW
-	fprintf(stderr,">>> Running module _fini in ["__FILE__"]\n"
-			">>> using CTORS/DTORS mechanism\n");
+    fprintf(stderr, ">>> Running module _fini in [" __FILE__ "]\n"
+            ">>> using CTORS/DTORS mechanism\n");
 #endif
-	assert_ext(mlistmod_data.isinit);
-	/* Destroy all lists if not already done. Note: will not take care of
-	 * lists containing allocated payloads. This is not a garbage collector
-	 * */
-	for (
-		;
-		mlistmod_data.mlists;
-		mlistmod_data.nlists--, mlistmod_data.mlists=tnext
-	) {
-		fprintf(stderr,
-			"WARNING: Destructing un-freed list [%p]. "
-				"Possible leak\n",
-			mlistmod_data.mlists
-		);
-		if ((struct listheader*)(mlistmod_data.mlists->pl)){
-			struct node *tlist=
-				((struct listheader*)(mlistmod_data.mlists->pl))->phead;
-			int rc=0;
+    assert_ext(mlistmod_data.isinit);
+    /* Destroy all lists if not already done. Note: will not take care of
+     * lists containing allocated payloads. This is not a garbage collector
+     * */
+    for (;
+         mlistmod_data.mlists;
+         mlistmod_data.nlists--, mlistmod_data.mlists = tnext) {
+        fprintf(stderr,
+                "WARNING: Destructing un-freed list [%p]. "
+                "Possible leak\n", mlistmod_data.mlists);
+        if ((struct listheader *)(mlistmod_data.mlists->pl)) {
+            struct node *tlist =
+                ((struct listheader *)(mlistmod_data.mlists->pl))->phead;
+            int rc = 0;
 
-			fprintf(stderr,
-				"WARNING: Destructing un-freed pay-load [%p]. "
-					"List id: [%p]\n",
-				mlistmod_data.mlists->pl , tlist
-			);
-			rc=dstrct_mlist((handle_t)tlist);
-			assert_ext(rc==0);
-		}
+            fprintf(stderr,
+                    "WARNING: Destructing un-freed pay-load [%p]. "
+                    "List id: [%p]\n", mlistmod_data.mlists->pl, tlist);
+            rc = dstrct_mlist((handle_t) tlist);
+            assert_ext(rc == 0);
+        }
 
-		tnext=mlistmod_data.mlists->next;
-		free(mlistmod_data.mlists);
-		mlistmod_data.mlists = NULL;
-	}
+        tnext = mlistmod_data.mlists->next;
+        free(mlistmod_data.mlists);
+        mlistmod_data.mlists = NULL;
+    }
 
-	mlistmod_data.nlists = 0;
-	mlistmod_data.isinit=0;
+    mlistmod_data.nlists = 0;
+    mlistmod_data.isinit = 0;
 }
 
-
-int mlist_init() {
-	return 0;
+int mlist_init()
+{
+    return 0;
 }
 
-int mlist_fini() {
-	return 0;
+int mlist_fini()
+{
+    return 0;
 }

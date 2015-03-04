@@ -23,13 +23,13 @@
 /* Module (global) data. Placed in struct to be easier to find by GDB. Must
  * be global as several c-files belonging to the same module shares this */
 struct mlistmod_struct mlistmod_data = {
-	.isinit = 0,
-	.nlists = 0,
-	.mlists = NULL,
+    .isinit = 0,
+    .nlists = 0,
+    .mlists = NULL,
 };
 
 struct mlistmod_settings mlistmod_settings = {
-	.isinit = 0,
-	.debuglevel = -1,
-	.verbose = 0,
+    .isinit = 0,
+    .debuglevel = -1,
+    .verbose = 0,
 };
