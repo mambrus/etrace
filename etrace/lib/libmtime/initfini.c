@@ -3,7 +3,6 @@
 #include <limits.h>
 #include <string.h>
 #include <config.h>
-#include <sysmtime.h>
 #define __init __attribute__((constructor))
 #define __fini __attribute__((destructor))
 

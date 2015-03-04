@@ -22,7 +22,14 @@
 
 #include <sys/time.h>
 
-int time_now(struct timeval *tv);
-struct timeval tv_diff( struct timeval t0, struct timeval t1 );
+typedef enum {
+    AUTODETECT = 0,             /* Probes during startup and selects best type */
+    KERNEL_CLOCK,               /* As close to kernel time as possible */
+    CALENDER_CLOCK              /* Best form of calender clock is used */
+} clock_type;
 
-#endif /* define mtime_h */
+void set_clocktype(clock_type ct);
+int time_now(struct timeval *tv);
+struct timeval tv_diff(struct timeval t0, struct timeval t1);
+
+#endif                          /* define mtime_h */

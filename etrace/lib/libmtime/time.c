@@ -33,8 +33,9 @@
 #include <stdint.h>
 #include <string.h>
 
-/* Include module common stuff */
-#include "local.h"
+#include "include/mtime.h"
+
+static clock_type _clock_type;
 
 /* Returns diff-time of two 'struct timeval' types
  * Note: Order matters. t0 means the first event, t1 the second on the same
@@ -82,6 +83,10 @@ struct timeval tv_add(struct timeval t0, struct timeval t1) {
 	return tv;
 }
 
+void set_clocktype(clock_type ct) {
+	_clock_type = ct;
+}
+
 /* Return "time-now" in best available format according to modality.
  * Currently using either:
  *  int clock_gettime(clockid_t clock_id, struct timespec *tp);
@@ -102,7 +107,7 @@ int time_now(struct timeval *tv) {
 	int rc;
 	struct timespec tp;
 
-	switch (sampler_setting.clock_type) {
+	switch (_clock_type) {
 		case KERNEL_CLOCK:
 #ifdef CLOCK_MONOTONIC_RAW
 			rc=clock_gettime(CLOCK_MONOTONIC_RAW, &tp);

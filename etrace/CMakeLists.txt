@@ -67,6 +67,12 @@ add_subdirectory (lib/libmlist)
 	set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} -Wl,--undefined=__mlist_init")
 set (EXTRA_LIBS ${EXTRA_LIBS} libmlist)
 
+# -time-
+include_directories ("${PROJECT_SOURCE_DIR}/lib/libmtime/include")
+add_subdirectory (lib/libmtime)
+	set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} -Wl,--undefined=__mtime_init")
+set (EXTRA_LIBS ${EXTRA_LIBS} libmtime)
+
 ################################################################################
 # Project
 ################################################################################

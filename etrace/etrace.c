@@ -22,6 +22,19 @@ struct opts opts = {
 /* *INDENT-ON* */
 };
 
+struct etrace {
+	struct opts* opts;
+	char outfname[PATH_MAX];
+
+};
+
+struct etrace etrace = {
+/* *INDENT-OFF* */
+    .opts 			= &opts,
+	.outfname       = NULL
+/* *INDENT-ON* */
+};
+
 int main(int argc, char **argv)
 {
     int rc;
