@@ -22,7 +22,7 @@
 
 void __init __mtime_init(void)
 {
-	set_clocktype(KERNEL_CLOCK);
+    set_clocktype(KERNEL_CLOCK);
 }
 
 void __fini __mtime_fini(void)
