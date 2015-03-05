@@ -6,3 +6,5 @@ gitit.log
 gitit-users
 cache/
 BUILD*/
+tags
+c-tags
