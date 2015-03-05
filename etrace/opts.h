@@ -55,6 +55,7 @@ struct opts {
     char debugfs_path[PATH_MAX];
     char workdir[PATH_MAX];
     pid_t pid;
+    unsigned rid;               /*Run ID */
     int daemon;
 };
 

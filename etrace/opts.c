@@ -88,6 +88,10 @@ static void opts_parse_opt(const char *cmd,
             req_opt('p')->cnt++;
             opts->pid = arg ? atoi(arg) : 0;
             break;
+        case 'i':
+            req_opt('i')->cnt++;
+            opts->rid = arg ? atoi(arg) : 0;
+            break;
         case 'u':
             req_opt('u')->cnt++;
             opts_help(stdout, HELP_USAGE | HELP_EXIT);
@@ -129,6 +133,7 @@ static struct option long_options[] = {
     {"debugfs",        required_argument,  0,  'm'},
     {"workdir",        required_argument,  0,  'w'},
     {"process",        required_argument,  0,  'p'},
+    {"run-id",         required_argument,  0,  'i'},
     {"daemon",         no_argument,        0,  'z'},
     {"documentation",  no_argument,        0,  'D'},
     {"help",           no_argument,        0,  'h'},
@@ -148,6 +153,7 @@ static struct req_opt req_opts[] = {
     {'m',  not_req,    precisely,  0},
     {'w',  not_req,    precisely,  0},
     {'p',  mandatory,  at_least,   0},
+    {'i',  not_req,    precisely,  0},
     {'z',  not_req,    precisely,  0},
     {'D',  not_req,    at_least,   0},
     {'h',  not_req,    at_least,   0},
@@ -246,7 +252,7 @@ int opts_parse(int argc, char **argv, struct opts *opts)
     while (1) {
         int option_index = 0;
         int c = getopt_long(argc, argv,
-                            "v:T:m:p:w:zDuhV",
+                            "v:T:m:p:i:w:zDuhV",
                             long_options,
                             &option_index);
         /* Detect the end of the options. */

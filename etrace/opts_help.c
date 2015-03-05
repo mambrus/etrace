@@ -42,6 +42,7 @@ void opts_help(FILE *file, int flags)
                 "            [-m path] [--debugfs=path] \n"
                 "            [-w path] [--workdir=path] \n"
                 "            [-p pid] [--process=pid] \n"
+                "            [-i id] [--run-id=id] \n"
                 "            [--documentation]\n"
                 "            [--help] [--usage] [--version]\n");
         fflush(file);
@@ -60,6 +61,7 @@ void opts_help(FILE *file, int flags)
                 "  -w, --workdir=path         Workdir, also output directory ("
                 xstr(DEF_WORKDIR) ")\n"
                 "  -p, --process=pid          Process-id to track. MANDATORY - NO DEFAULT\n"
+                "  -i, --run-id=id            A marker to tag a run\n"
                 "  -v, --verbosity            Set the verbosity level.\n"
                 "                             Levels, listed in increasing verbosity, are:\n"
                 "                             critical, error, warning, info, debug, verbose\n"

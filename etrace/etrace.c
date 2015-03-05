@@ -1,10 +1,12 @@
 #include <stdio.h>
 #include <config.h>
+#include <sys/time.h>
 
 //#undef NDEBUG
 #define NDEBUG
 #include "assure.h"
 #include <log.h>
+#include <mtime.h>
 #include "opts.h"
 
 /* This binds when grobal variable initialization is run in .start, i.e.
@@ -18,20 +20,22 @@ struct opts opts = {
     .debugfs_path   = DEF_DEBUGFS_PATH,
     .workdir        = DEF_WORKDIR,
     .pid            = 0,
+    .rid            = 0,
     .daemon         = 0
 /* *INDENT-ON* */
 };
 
 struct etrace {
-	struct opts* opts;
-	char outfname[PATH_MAX];
+    struct opts *opts;
+    struct timeval stime;
+    char outfname[PATH_MAX];
 
 };
 
 struct etrace etrace = {
 /* *INDENT-OFF* */
-    .opts 			= &opts,
-	.outfname       = NULL
+    .opts             = &opts,
+	//.outfname       = NULL
 /* *INDENT-ON* */
 };
 
@@ -51,6 +55,12 @@ int main(int argc, char **argv)
     LOGW("Hello [WARNING] %d\n", LOG_LEVEL_WARNING);
     LOGE("Hello [ERROR] %d\n", LOG_LEVEL_ERROR);
     //LOGC("Hello [CRITICAL] %d\n", LOG_LEVEL_CRITICAL);
+
+    assert_np(time_now(&etrace.stime));
+    sprintf(etrace.outfname, "%d_%06d_%06d_%d.trc", etrace.opts->rid,
+            (int)etrace.stime.tv_sec, (int)etrace.stime.tv_usec,
+            etrace.opts->pid);
+    LOGI("Out-file name: %s", etrace.outfname);
 
     return 0;
 }
