@@ -29,7 +29,8 @@
 
 int dstrct_mlist(const handle_t handle);
 
-/* Administrative keeper of all lists */
+/* Administrative keeper of all lists. Module global data. I.e. there can be
+   only one instance of this struct */
 struct mlistmod_struct {
     int isinit;                 /* Is this module initialized? I.e. does mlist
                                    below contain a valid pointer e.t.a. */
@@ -60,6 +61,7 @@ struct listheader {
     int (*cmpfunc) (LDATA * lval, LDATA * rval);
     struct node *phead;         /* List-start */
     struct node *ptail;         /* List-end */
+    struct node *bp;            /* Administrative pointer, i.e. back-pointer to the mlists node */
 };
 
 #endif                          /* libmlist_local_h */

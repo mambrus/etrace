@@ -39,11 +39,44 @@ static inline struct node *reverse(off_t n)
     return NULL;
 };
 
+/* Frees all payloads memory, removes itself from the linked list, inerts new
+   sentinels if needed and lastly free the memory */
+static inline void free_list(struct listheader *L)
+{
+    struct node *bp = L->bp;
+    assert(bp);
+    struct node *p;
+
+    for (p = L->phead; p;) {
+        p = p->next;
+        free(p->prev);
+    }
+
+    if (bp->prev)
+        bp->prev->next = bp->next;
+
+    if (bp->next)
+        bp->next->prev = bp->prev;
+
+    mlistmod_data.nlists--;
+
+    /* Module list of list will always point at the last node. If this is the
+       one we're removing, change that that pointer to the nodes previous.
+       Recursively this should eventually also point to NULL so the modules fini
+       is happy */
+
+    if (bp == mlistmod_data.mlists)
+        mlistmod_data.mlists = bp->prev;
+
+    free(bp);
+    free(L);
+}
+
 /* Operations list level                            */
 /* ================================================ */
-int
-mlist_opencreate(int sz,
-                 int (*cmpfunc) (LDATA * lval, LDATA * rval), handle_t * hndl)
+int mlist_opencreate(int sz,
+                     int (*cmpfunc) (LDATA * lval, LDATA * rval),
+                     handle_t * hndl)
 {
     struct listheader *L = NULL;
     assert_ext(mlistmod_data.isinit);
@@ -70,8 +103,8 @@ mlist_opencreate(int sz,
     /*Cotinue initialize our list headers payload */
     L = mlistmod_data.mlists->pl;
     memset(L, 0, sizeof(struct listheader));
-    /* Not really needed to to the following 3 */
-    /* L->p       = mlistmod_data.mlists; WRONG */
+
+    L->bp = mlistmod_data.mlists;
     L->nr_links = 0;
     L->owner = NULL;
     L->p = NULL;
@@ -113,14 +146,22 @@ int mlist_close(const handle_t handle)
     assert_ext(handle && "invalid or not initialized");
 
     struct listheader *L = (struct listheader *)handle;
-    if (L->nr_links == 0) {
-        /* Freeing only meta-data */
+    if ((struct listheader *)L->owner) {
+        /* This list was duped */
         ((struct listheader *)L->owner)->nr_links--;
-        free(L);
+
+        /* If original listheader (owner) is also finally unlinked, it can be
+           destroyed */
+        free_list(L->owner);
+    }
+    if (L->nr_links == 0) {
+        /* If list has links, this must remain stale until the last link has
+           closed, only then can this listheader also be freed */
+
+        free_list(L);
         return (0);
     }
-    /* For the root handle, more sophisticated stuff is needed */
-    assert_ext(!TBD_UNFINISHED);
+    /* Note that for the root handle, more sophisticated stuff is needed */
     return 0;
 };
 
@@ -132,6 +173,8 @@ int mlist_delete(const handle_t handle)
     assert_ext(handle && "invalid or not initialized");
 
     struct listheader *L = (struct listheader *)handle;
+    assert(L);
+
     assert_ext(!TBD_UNFINISHED);
     return 0;
 };
@@ -142,6 +185,8 @@ int dstrct_mlist(const handle_t handle)
     assert_ext(handle && "invalid or not initialized");
 
     struct listheader *L = (struct listheader *)handle;
+    assert(L);
+
     assert_ext(!TBD_UNFINISHED);
     return 0;
 };
@@ -253,6 +298,8 @@ struct node *mlist_add_first(const handle_t handle, const LDATA * data)
     assert_ext(handle && "invalid or not initialized");
 
     struct listheader *L = (struct listheader *)handle;
+    assert(L);
+
     assert_ext(!TBD_UNFINISHED);
     return NULL;
 };
@@ -263,6 +310,8 @@ struct node *mlist_del(const handle_t handle)
     assert_ext(handle && "invalid or not initialized");
 
     struct listheader *L = (struct listheader *)handle;
+    assert(L);
+
     assert_ext(!TBD_UNFINISHED);
     return NULL;
 };
@@ -273,6 +322,8 @@ struct node *mlist_del_last(const handle_t handle)
     assert_ext(handle && "invalid or not initialized");
 
     struct listheader *L = (struct listheader *)handle;
+    assert(L);
+
     assert_ext(!TBD_UNFINISHED);
     return NULL;
 };
@@ -283,6 +334,8 @@ struct node *mlist_del_first(const handle_t handle)
     assert_ext(handle && "invalid or not initialized");
 
     struct listheader *L = (struct listheader *)handle;
+    assert(L);
+
     assert_ext(!TBD_UNFINISHED);
     return NULL;
 };
@@ -293,6 +346,8 @@ struct node *mlist_dsrct(const handle_t handle)
     assert_ext(handle && "invalid or not initialized");
 
     struct listheader *L = (struct listheader *)handle;
+    assert(L);
+
     assert_ext(!TBD_UNFINISHED);
     return NULL;
 };
@@ -303,6 +358,8 @@ struct node *mlist_dsrct_last(const handle_t handle)
     assert_ext(handle && "invalid or not initialized");
 
     struct listheader *L = (struct listheader *)handle;
+    assert(L);
+
     assert_ext(!TBD_UNFINISHED);
     return NULL;
 };
@@ -313,6 +370,8 @@ struct node *mlist_dsrct_first(const handle_t handle)
     assert_ext(handle && "invalid or not initialized");
 
     struct listheader *L = (struct listheader *)handle;
+    assert(L);
+
     assert_ext(!TBD_UNFINISHED);
     return NULL;
 };
@@ -323,6 +382,8 @@ struct node *mlist_lseek(const handle_t handle, off_t offset, int whence)
     assert_ext(handle && "invalid or not initialized");
 
     struct listheader *L = (struct listheader *)handle;
+    assert(L);
+
     assert_ext(!TBD_UNFINISHED);
     return NULL;
 };
@@ -333,6 +394,8 @@ struct node *mlist_search(const handle_t handle, const LDATA * data)
     assert_ext(handle && "invalid or not initialized");
 
     struct listheader *L = (struct listheader *)handle;
+    assert(L);
+
     assert_ext(!TBD_UNFINISHED);
     return NULL;
 };
