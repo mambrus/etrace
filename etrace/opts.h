@@ -50,13 +50,14 @@
 
 /* General opts */
 struct opts {
-    log_level *loglevel;
-    unsigned ptime;
-    char debugfs_path[PATH_MAX];
-    char workdir[PATH_MAX];
-    pid_t pid;
-    unsigned rid;               /*Run ID */
-    int daemon;
+    log_level *loglevel;        /* Verbosity level */
+    unsigned ptime;             /* Time to harvest i uS */
+    char debugfs_path[PATH_MAX];    /* Path to where Linux debugfs is mounted */
+    char workdir[PATH_MAX];     /* Output directory */
+    pid_t pid;                  /* Process to trace */
+    int threads;                /* True if threads too */
+    unsigned rid;               /* Run ID */
+    int daemon;                 /* If to become a daemon or not */
 };
 
 #include <stdio.h>

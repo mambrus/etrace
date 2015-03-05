@@ -88,6 +88,22 @@ static void opts_parse_opt(const char *cmd,
             req_opt('p')->cnt++;
             opts->pid = arg ? atoi(arg) : 0;
             break;
+        case 't':
+            req_opt('t')->cnt++;
+            opts->threads = 1;
+            break;
+        case 'e':
+            req_opt('e')->cnt++;
+            /**********************************************/
+            //TBD
+            //strncpy(opts->workdir, arg, PATH_MAX);
+            break;
+        case 'f':
+            req_opt('f')->cnt++;
+            /**********************************************/
+            //TBD
+            //strncpy(opts->workdir, arg, PATH_MAX);
+            break;
         case 'i':
             req_opt('i')->cnt++;
             opts->rid = arg ? atoi(arg) : 0;
@@ -133,6 +149,9 @@ static struct option long_options[] = {
     {"debugfs",        required_argument,  0,  'm'},
     {"workdir",        required_argument,  0,  'w'},
     {"process",        required_argument,  0,  'p'},
+    {"with-threads",   no_argument,        0,  't'},
+    {"event",          no_argument,        0,  'e'},
+    {"filter",         no_argument,        0,  'f'},
     {"run-id",         required_argument,  0,  'i'},
     {"daemon",         no_argument,        0,  'z'},
     {"documentation",  no_argument,        0,  'D'},
@@ -153,6 +172,9 @@ static struct req_opt req_opts[] = {
     {'m',  not_req,    precisely,  0},
     {'w',  not_req,    precisely,  0},
     {'p',  mandatory,  at_least,   0},
+    {'t',  not_req,    precisely,  0},
+    {'e',  mandatory,  at_least,   0},
+    {'f',  not_req,    at_least,   0},
     {'i',  not_req,    precisely,  0},
     {'z',  not_req,    precisely,  0},
     {'D',  not_req,    at_least,   0},
@@ -252,7 +274,7 @@ int opts_parse(int argc, char **argv, struct opts *opts)
     while (1) {
         int option_index = 0;
         int c = getopt_long(argc, argv,
-                            "v:T:m:p:i:w:zDuhV",
+                            "v:T:m:p:te:f:i:w:zDuhV",
                             long_options,
                             &option_index);
         /* Detect the end of the options. */

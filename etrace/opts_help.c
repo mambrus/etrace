@@ -36,12 +36,14 @@ void opts_help(FILE *file, int flags)
 {
     if (file && flags & HELP_USAGE) {
         fprintf(file, "%s",
-                "Usage: etrace [-DzhuV]\n"
+                "Usage: etrace [-DzhutV]\n"
                 "            [-T time] [--period=time]\n"
                 "            [-v level] [--verbosity=level] \n"
                 "            [-m path] [--debugfs=path] \n"
                 "            [-w path] [--workdir=path] \n"
                 "            [-p pid] [--process=pid] \n"
+                "            [-e name] [--event=name] \n"
+                "            [-f expr] [--filter=expr] \n"
                 "            [-i id] [--run-id=id] \n"
                 "            [--documentation]\n"
                 "            [--help] [--usage] [--version]\n");
@@ -54,13 +56,16 @@ void opts_help(FILE *file, int flags)
                 "\n"
                 "Generic options:\n"
                 "  -D, --documentation        Output full documentation, then exit\n"
-                "  -T, --period=time          Period-/ harvest-time in uS ("
+                "  -T, --period=time          Harvest-time (uS). ("
                 xstr(DEF_PTIME) ")\n"
                 "  -m, --debugfs=path         Debugfs mount-point path ("
                 xstr(DEF_DEBUGFS_PATH) ")\n"
                 "  -w, --workdir=path         Workdir, also output directory ("
                 xstr(DEF_WORKDIR) ")\n"
                 "  -p, --process=pid          Process-id to track. MANDATORY - NO DEFAULT\n"
+                "  -t, --with-threads         Trace also a process threads with equivalent patterns\n"
+                "  -e, --event=name           Event to trace. This option can be given multiple times\n"
+                "  -f, --filter=expr          Filter for each event. This option can given multiple times.\n"
                 "  -i, --run-id=id            A marker to tag a run\n"
                 "  -v, --verbosity            Set the verbosity level.\n"
                 "                             Levels, listed in increasing verbosity, are:\n"

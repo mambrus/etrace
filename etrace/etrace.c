@@ -8,6 +8,8 @@
 #include <log.h>
 #include <mtime.h>
 #include "opts.h"
+#include "etrace.h"
+#include <mlist.h>
 
 /* This binds when grobal variable initialization is run in .start, i.e.
  * before CTOR */
@@ -25,23 +27,22 @@ struct opts opts = {
 /* *INDENT-ON* */
 };
 
-struct etrace {
-    struct opts *opts;
-    struct timeval stime;
-    char outfname[PATH_MAX];
-
-};
-
 struct etrace etrace = {
 /* *INDENT-OFF* */
     .opts             = &opts,
-	//.outfname       = NULL
 /* *INDENT-ON* */
 };
 
 int main(int argc, char **argv)
 {
     int rc;
+
+    assert_ext((rc =
+                mlist_opencreate(sizeof(struct event *), NULL,
+                                 &etrace.event_list)
+               ) == 0);
+    assert_ext((rc = mlist_opencreate(sizeof(pid_t *), NULL, &etrace.pid_list)
+               ) == 0);
 
     rc = opts_parse(argc, argv, &opts);
     LOGI("Parsed %d options\n", rc);
@@ -61,6 +62,11 @@ int main(int argc, char **argv)
             (int)etrace.stime.tv_sec, (int)etrace.stime.tv_usec,
             etrace.opts->pid);
     LOGI("Out-file name: %s", etrace.outfname);
+
+    assert_ext((rc = mlist_close(etrace.event_list)
+               ) == 0);
+    assert_ext((rc = mlist_close(etrace.pid_list)
+               ) == 0);
 
     return 0;
 }
