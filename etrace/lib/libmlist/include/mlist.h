@@ -79,7 +79,7 @@ struct node *mlist_prev(const handle_t handle);
 /* Go-to's */
 struct node *mlist_head(const handle_t handle);
 struct node *mlist_tail(const handle_t handle);
-struct node *mlist_curr(const handle_t handle);
+LDATA *mlist_curr(const handle_t handle);
 
 /* Node insert:
  * Note: Node will be allocated on heap and inserted in list at iterator
@@ -105,5 +105,19 @@ struct node *mlist_dstrct_first(const handle_t handle);
 
 struct node *mlist_lseek(const handle_t handle, off_t offset, int whence);
 struct node *mlist_search(const handle_t handle, const LDATA * data);
+
+/* List header (meta-data) access functions */
+//struct node *mlist_curr(const handle_t handle);
+off_t mlist_offset(const handle_t handle);
+int mlist_len(const handle_t handle);
+int mlist_dsize(const handle_t handle);
+int mlist_nlinks(const handle_t handle);
+/*
+    int (*cmpfunc) (LDATA * lval, LDATA * rval);
+    return ((struct listheader *)handle)->(*cmpfunc);
+    }
+*/
+//struct node *mlist_head(const handle_t handle);
+//struct node *mlist_tail(const handle_t handle);
 
 #endif                          /* mlist_h */

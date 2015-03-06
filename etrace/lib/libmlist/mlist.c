@@ -39,19 +39,22 @@ static inline struct node *reverse(off_t n)
     return NULL;
 };
 
-/* Frees all payloads memory, removes itself from the linked list, inerts new
-   sentinels if needed and lastly free the memory */
+/* Frees payloads memory and node itself, removes list from the
+   module-global list, inerts new sentinels if needed and lastly free the
+   memory */
 static inline void free_list(struct listheader *L)
 {
     struct node *bp = L->bp;
     assert(bp);
     struct node *p;
 
-    for (p = L->phead; p;) {
-        p = p->next;
-        free(p->prev);
+    /* Lists content of nodes are freed */
+    for (p = L->phead; p; p = p->next) {
+        free(p->pl);            /* Need checking if list is shallow or deep (TBD) */
+        free(p);
     }
 
+    /* Lists itself is unlinked from module-global list */
     if (bp->prev)
         bp->prev->next = bp->next;
 
@@ -204,8 +207,8 @@ struct node *mlist_next(const handle_t handle)
     return (L->p);
 };
 
-/*Returns node at current position */
-struct node *mlist_curr(const handle_t handle)
+/*Returns payload at current nodes position */
+LDATA *mlist_curr(const handle_t handle)
 {
     assert_ext(mlistmod_data.isinit);
     assert_ext(handle && "invalid or not initialized");
@@ -214,7 +217,7 @@ struct node *mlist_curr(const handle_t handle)
     if (!L->p)
         return (NULL);
 
-    return (L->p);
+    return (L->p->pl);
 };
 
 struct node *mlist_prev(const handle_t handle)
@@ -286,10 +289,15 @@ struct node *mlist_add_last(const handle_t handle, const LDATA * data)
         /* Note. No need to save/restore list header temporary as it's intact. */
     }
 
-    L->ptail->pl = (LDATA *) data;
+    L->ptail->pl = malloc(L->pl_sz);
+    memcpy(L->ptail->pl, data, L->pl_sz);
     L->nelem++;
     assert_ext(L != L->p->pl);
-    return L->ptail;
+
+    /* Note that this enforces that *different* handles are used if the same
+     * list can be both iterated and added too at the same time concurrently */
+    L->p = L->ptail;
+    return L->p;
 };
 
 struct node *mlist_add_first(const handle_t handle, const LDATA * data)
@@ -399,3 +407,48 @@ struct node *mlist_search(const handle_t handle, const LDATA * data)
     assert_ext(!TBD_UNFINISHED);
     return NULL;
 };
+
+/*
+struct node *mlist_curr(const handle_t handle)
+{
+    return ((struct listheader *)handle)->p;
+}
+*/
+
+off_t mlist_offset(const handle_t handle)
+{
+    return ((struct listheader *)handle)->o;
+}
+
+int mlist_len(const handle_t handle)
+{
+    return ((struct listheader *)handle)->nelem;
+}
+
+int mlist_dsize(const handle_t handle)
+{
+    return ((struct listheader *)handle)->pl_sz;
+}
+
+int mlist_nlinks(const handle_t handle)
+{
+    return ((struct listheader *)handle)->nr_links;
+}
+
+/*
+    int (*cmpfunc) (LDATA * lval, LDATA * rval);
+    return ((struct listheader *)handle)->(*cmpfunc);
+    }
+*/
+
+/*
+struct node *mlist_head(const handle_t handle)
+{
+    return ((struct listheader *)handle)->phead;
+}
+
+struct node *mlist_tail(const handle_t handle)
+{
+    return ((struct listheader *)handle)->ptail;
+}
+*/
