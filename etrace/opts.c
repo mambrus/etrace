@@ -56,8 +56,8 @@ struct req_opt *req_opt(int val);
 extern struct etrace etrace;
 
 /* Parse a single option. */
-static void opts_parse_opt(const char *cmd,
-                           int key, char *arg, struct opts *opts)
+static int opts_parse_opt(const char *cmd,
+                          int key, char *arg, struct opts *opts)
 {
     struct event event;
     struct event *event_node;
@@ -116,7 +116,7 @@ static void opts_parse_opt(const char *cmd,
                      mlist_len(etrace.event_list));
 
                 LOGE("Check order for options -e and -f\n");
-                //return(1);
+                return E_OPT_USAGE;
             }
             strncpy(event_node->filter, arg, FILTER_MAX);
             break;
@@ -156,6 +156,7 @@ static void opts_parse_opt(const char *cmd,
             opts_help(stderr, HELP_TRY | HELP_EXIT_ERR);
             break;
     }
+    return OPT_OK;
 }
 
 static struct option long_options[] = {
@@ -245,7 +246,7 @@ static int become_daemon()
 
 int opts_check(const struct opts *opts)
 {
-    int resok = 1;
+    int resok = OPT_OK;
     struct option *op = long_options;
     struct req_opt *rop = req_opts;
 
@@ -260,32 +261,39 @@ int opts_check(const struct opts *opts)
         else
             LOGV("%-15s %d NULL %c %2d %2d %2d\n",
                  op->name, op->has_arg, op->val, rop->req, rop->cnt, rop->max);
+
         if (rop->cnt < rop->req) {
             LOGE("Mandatory option [\"%s\",'%c'] requirement failed. "
                  "Seen [%d] times, required [%d]",
                  op->name, op->val, rop->cnt, rop->req, rop->max);
-            resok = 0;
+            resok = E_OPT_REQ;
         }
         if (rop->max > 0 && rop->cnt > rop->max) {
             LOGE("Count of option [\"%s\",'%c'] requirement failed. "
                  "Seen [%d] times, permitted [%d]",
                  op->name, op->val, rop->cnt, rop->req, rop->max);
-            resok = 0;
+            resok = E_OPT_REQ;
         }
         if (rop->max == precisely && rop->cnt != rop->max && rop->req > 0) {
             LOGE("Count of option [\"%s\",'%c'] requirement failed. "
                  "Seen [%d] times, expected [%d]",
                  op->name, op->val, rop->cnt, rop->req, rop->max);
-            resok = 0;
+            resok = E_OPT_REQ;
         }
     }
 
     return resok;
 }
 
+/* Parse options
+ *
+ * Returns number of options parsed.
+ * Negative return-value indicate error.
+ *
+ * */
 int opts_parse(int argc, char **argv, struct opts *opts)
 {
-    int parsed_options = 0;
+    int rc, parsed_options = 0;
 
     while (1) {
         int option_index = 0;
@@ -296,7 +304,9 @@ int opts_parse(int argc, char **argv, struct opts *opts)
         /* Detect the end of the options. */
         if (c == -1)
             break;
-        opts_parse_opt(argv[0], c, optarg, opts);
+        ASSURE_E((rc =
+                  opts_parse_opt(argv[0], c, optarg, opts)) == OPT_OK,
+                 return rc);
         parsed_options++;
     }
 

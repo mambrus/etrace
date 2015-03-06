@@ -35,6 +35,10 @@
 #define HELP_EXIT     16
 #define HELP_EXIT_ERR 32
 
+#define OPT_OK         0
+#define E_OPT_REQ     -1        /* User breaks option requirement rule */
+#define E_OPT_USAGE   -2        /* User breaks usage of option  */
+
 #ifndef DEF_PTIME
 #define DEF_PTIME           1000
 #endif

@@ -12,7 +12,7 @@
 #include "etrace.h"
 #include <mlist.h>
 
-/* This binds when grobal variable initialization is run in .start, i.e.
+/* This binds when global variable initialization is run in .start, i.e.
  * before CTOR */
 log_level log_filter_level = DEF_LOG_LEVEL;
 
@@ -46,9 +46,10 @@ int main(int argc, char **argv)
     assert_ext((rc = mlist_opencreate(sizeof(pid_t), NULL, &etrace.pid_list)
                ) == 0);
 
-    rc = opts_parse(argc, argv, &opts);
-    LOGI("Parsed %d options\n", rc);
-    assert_ext(opts_check(&opts) == 1);
+    ASSURE_E((rc = opts_parse(argc, argv, &opts)) > 0, goto done);
+    LOGI("Parsed %d options.\n", rc);
+    ASSURE_E(opts_check(&opts) == OPT_OK, goto done);
+    LOGI("Option passed rule-ckeck OK\n", rc);
 
     printf("Hello world: v%s \n", VERSION);
     //log_set_verbosity(LOG_LEVEL_VERBOSE);
@@ -60,7 +61,7 @@ int main(int argc, char **argv)
     //LOGC("Hello [CRITICAL] %d\n", LOG_LEVEL_CRITICAL);
 
     assert_np(time_now(&etrace.stime));
-    sprintf(etrace.outfname, "%d_%06d_%06d_%d.trc", etrace.opts->rid,
+    sprintf(etrace.outfname, "%d_%06d_%06d_%d.etrace", etrace.opts->rid,
             (int)etrace.stime.tv_sec, (int)etrace.stime.tv_usec,
             etrace.opts->pid);
     LOGI("Out-file name: %s", etrace.outfname);
@@ -82,6 +83,8 @@ int main(int argc, char **argv)
             LOGI("  %s\n",e->name);
         LOGI("  %s\n",e->filter);
     }
+
+done:
 
     assert_ext((rc = mlist_close(etrace.event_list)
                ) == 0);
