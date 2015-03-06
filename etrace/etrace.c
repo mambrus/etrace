@@ -40,8 +40,7 @@ int main(int argc, char **argv)
     struct node *n;
 
     assert_ext((rc =
-                mlist_opencreate(sizeof(struct event), NULL,
-                                 &etrace.event_list)
+                mlist_opencreate(sizeof(struct event), NULL, &etrace.event_list)
                ) == 0);
     assert_ext((rc = mlist_opencreate(sizeof(pid_t), NULL, &etrace.pid_list)
                ) == 0);
@@ -66,22 +65,18 @@ int main(int argc, char **argv)
             etrace.opts->pid);
     LOGI("Out-file name: %s", etrace.outfname);
 
-/* *INDENT-OFF* */
-    for (
-        n = mlist_head(etrace.event_list), cnt=0;
-        n; 
-        n = mlist_next(etrace.event_list)
-    ) {
-/* *INDENT-ON* */
+    for (n = mlist_head(etrace.event_list), cnt = 0;
+         n; n = mlist_next(etrace.event_list)
+        ) {
         struct event *e;
         assert(n->pl);
-        e=mlist_curr(etrace.event_list);
-        LOGI("Event #%d:\n",cnt++);
-        if (strlen(e->name)==0)
-            LOGE("  %s\n",e->name);
+        e = mlist_curr(etrace.event_list);
+        LOGI("Event #%d:\n", cnt++);
+        if (strlen(e->name) == 0)
+            LOGE("  %s\n", e->name);
         else
-            LOGI("  %s\n",e->name);
-        LOGI("  %s\n",e->filter);
+            LOGI("  %s\n", e->name);
+        LOGI("  %s\n", e->filter);
     }
 
 done:
