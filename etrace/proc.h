@@ -17,36 +17,13 @@
  *   Free Software Foundation, Inc.,                                       *
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
-#ifndef etrace_h
-#define etrace_h
-
-#undef LDATA
-#define LDATA struct event
-#include <mlist.h>
+#ifndef proc_h
+#define proc_h
 
 #include <limits.h>
-#define FILTER_MAX 255
+#include <mlist.h>
+#include "etrace.h"
 
-struct event {
-    char name[PATH_MAX];
-    char filter[FILTER_MAX];
-};
+int tid_populate(pid_t pid, handle_t pid_trigger_list, handle_t event_list);
 
-/* PID trigger
- * The process-id, corresponding event.name and it's potentially transformed filter
- */
-struct pid_trigger {
-    pid_t pid;
-    char *event_name;
-    char filter[FILTER_MAX];
-};
-
-struct etrace {
-    struct opts *opts;
-    struct timeval stime;
-    char outfname[PATH_MAX];
-    handle_t pid_trigger_list;
-    handle_t event_list;
-};
-
-#endif                          /* etrace_h */
+#endif                          /* proc_h */
