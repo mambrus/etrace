@@ -96,6 +96,7 @@ set(ETRACE_SOURCE
 	etrace.c
 	opts.c
 	opts_help.c
+	proc.c
 )
 
 install(PROGRAMS ${PROJECT_BINARY_DIR}/etrace DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
