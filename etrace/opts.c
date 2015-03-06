@@ -34,9 +34,11 @@
 #include <stdio.h>
 #include <assert.h>
 
+#include "assure.h"
 #include <log.h>
 #include "opts.h"
 #include "doc.h"
+#include "etrace.h"
 
 #define not_req    0
 #define mandatory  1
@@ -51,10 +53,17 @@ struct req_opt {
 };
 struct req_opt *req_opt(int val);
 
+extern struct etrace etrace;
+
 /* Parse a single option. */
 static void opts_parse_opt(const char *cmd,
                            int key, char *arg, struct opts *opts)
 {
+    struct event event;
+    struct event *event_node;
+
+    memset(&event, 0, sizeof(event));
+
     switch (key) {
         case 'T':
             req_opt('T')->cnt++;
@@ -94,15 +103,22 @@ static void opts_parse_opt(const char *cmd,
             break;
         case 'e':
             req_opt('e')->cnt++;
-            /**********************************************/
-            //TBD
-            //strncpy(opts->workdir, arg, PATH_MAX);
+            strncpy(event.name, arg, PATH_MAX);
+            assert_np(mlist_add_last(etrace.event_list, &event));
             break;
         case 'f':
             req_opt('f')->cnt++;
-            /**********************************************/
-            //TBD
-            //strncpy(opts->workdir, arg, PATH_MAX);
+            assert_np(event_node = mlist_curr(etrace.event_list));
+            if (strnlen(event_node->filter, FILTER_MAX) > 0) {
+
+                LOGE("Filer [%s] is overwritten by [%s] for event [%s] (#%d)",
+                     event_node->filter, arg, event_node->name,
+                     mlist_len(etrace.event_list));
+
+                LOGE("Check order for options -e and -f\n");
+                //return(1);
+            }
+            strncpy(event_node->filter, arg, FILTER_MAX);
             break;
         case 'i':
             req_opt('i')->cnt++;

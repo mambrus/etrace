@@ -4,6 +4,7 @@
 
 //#undef NDEBUG
 #define NDEBUG
+#include <assert.h>
 #include "assure.h"
 #include <log.h>
 #include <mtime.h>
@@ -35,13 +36,14 @@ struct etrace etrace = {
 
 int main(int argc, char **argv)
 {
-    int rc;
+    int rc, cnt;
+    struct node *n;
 
     assert_ext((rc =
-                mlist_opencreate(sizeof(struct event *), NULL,
+                mlist_opencreate(sizeof(struct event), NULL,
                                  &etrace.event_list)
                ) == 0);
-    assert_ext((rc = mlist_opencreate(sizeof(pid_t *), NULL, &etrace.pid_list)
+    assert_ext((rc = mlist_opencreate(sizeof(pid_t), NULL, &etrace.pid_list)
                ) == 0);
 
     rc = opts_parse(argc, argv, &opts);
@@ -62,6 +64,24 @@ int main(int argc, char **argv)
             (int)etrace.stime.tv_sec, (int)etrace.stime.tv_usec,
             etrace.opts->pid);
     LOGI("Out-file name: %s", etrace.outfname);
+
+/* *INDENT-OFF* */
+    for (
+        n = mlist_head(etrace.event_list), cnt=0;
+        n; 
+        n = mlist_next(etrace.event_list)
+    ) {
+/* *INDENT-ON* */
+        struct event *e;
+        assert(n->pl);
+        e=mlist_curr(etrace.event_list);
+        LOGI("Event #%d:\n",cnt++);
+        if (strlen(e->name)==0)
+            LOGE("  %s\n",e->name);
+        else
+            LOGI("  %s\n",e->name);
+        LOGI("  %s\n",e->filter);
+    }
 
     assert_ext((rc = mlist_close(etrace.event_list)
                ) == 0);
