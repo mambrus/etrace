@@ -28,6 +28,7 @@
 #include <sys/wait.h>
 #include <getopt.h>
 #include "opts.h"
+#include "etrace.h"
 #include "config.h"
 
 const char *program_version = "etrace " VERSION;
@@ -93,8 +94,8 @@ void opts_help(FILE *file, int flags)
     }
 
     if (file && flags & HELP_EXIT)
-        exit(0);
+        etrace_exit(0);
 
     if (file && flags & HELP_EXIT_ERR)
-        exit(1);
+        etrace_exit(1);
 }

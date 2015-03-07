@@ -49,4 +49,6 @@ struct etrace {
     handle_t event_list;
 };
 
+void etrace_exit(int status);
+
 #endif                          /* etrace_h */

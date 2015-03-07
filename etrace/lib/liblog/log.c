@@ -113,3 +113,13 @@ void log_set_verbosity(log_level level)
 {
     log_filter_level = level;
 }
+
+/* Test what log-level is effectuated and where it ends up */
+void log_test()
+{
+    LOGV("liblog-test [VERBOSE] %d\n", LOG_LEVEL_VERBOSE);
+    LOGD("liblog-test [DEBUG] %d\n", LOG_LEVEL_DEBUG);
+    LOGI("liblog-test [INFO] %d\n", LOG_LEVEL_INFO);
+    LOGW("liblog-test [WARNING] %d\n", LOG_LEVEL_WARNING);
+    LOGE("liblog-test [ERROR] %d\n", LOG_LEVEL_ERROR);
+}

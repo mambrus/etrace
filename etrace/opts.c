@@ -135,7 +135,7 @@ static int opts_parse_opt(const char *cmd,
         case 'D':
             req_opt('D')->cnt++;
             doc_print();
-            exit(0);
+            etrace_exit(0);
             break;
         case '?':
             /* getopt_long already printed an error message. */

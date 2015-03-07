@@ -56,10 +56,25 @@ struct etrace etrace = {
 /* *INDENT-ON* */
 };
 
+/* Cleanup before exit even if exit-with-error */
+void etrace_exit(int status)
+{
+    int rc;
+
+    assert_ext((rc = mlist_close(etrace.event_list)
+               ) == 0);
+    assert_ext((rc = mlist_close(etrace.pid_trigger_list)
+               ) == 0);
+
+    exit(status);
+}
+
 int main(int argc, char **argv)
 {
     int rc, cnt;
     struct node *n;
+
+    LOGI("etrace version v%s \n", VERSION);
 
     assert_ext((rc =
                 mlist_opencreate(sizeof(struct event), NULL, &etrace.event_list)
@@ -69,25 +84,18 @@ int main(int argc, char **argv)
                                  &etrace.pid_trigger_list)
                ) == 0);
 
-    ASSURE_E((rc = opts_parse(argc, argv, &opts)) > 0, goto done);
+    ASSURE_E((rc = opts_parse(argc, argv, &opts)) > 0, goto err);
     LOGI("Parsed %d options.\n", rc);
-    ASSURE_E(opts_check(&opts) == OPT_OK, goto done);
+    ASSURE_E(opts_check(&opts) == OPT_OK, goto err);
     LOGI("Option passed rule-check OK\n", rc);
 
-    printf("Hello world: v%s \n", VERSION);
-    //log_set_verbosity(LOG_LEVEL_VERBOSE);
-    LOGV("Hello [VERBOSE] %d\n", LOG_LEVEL_VERBOSE);
-    LOGD("Hello [DEBUG] %d\n", LOG_LEVEL_DEBUG);
-    LOGI("Hello [INFO] %d\n", LOG_LEVEL_INFO);
-    LOGW("Hello [WARNING] %d\n", LOG_LEVEL_WARNING);
-    LOGE("Hello [ERROR] %d\n", LOG_LEVEL_ERROR);
-    //LOGC("Hello [CRITICAL] %d\n", LOG_LEVEL_CRITICAL);
+    log_test();
 
     assert_np(time_now(&etrace.stime));
     sprintf(etrace.outfname, "%d_%06d_%06d_%d.etrace", etrace.opts->rid,
             (int)etrace.stime.tv_sec, (int)etrace.stime.tv_usec,
             etrace.opts->pid);
-    LOGI("Out-file name: %s", etrace.outfname);
+    LOGD("Out-file name: %s", etrace.outfname);
 
     /* Diagnostic print-out of events */
     for (n = mlist_head(etrace.event_list), cnt = 0;
@@ -107,15 +115,12 @@ int main(int argc, char **argv)
     if (opts.threads) {
         ASSURE_E(tid_populate
                  (etrace.opts->pid, etrace.pid_trigger_list,
-                  etrace.pid_trigger_list), goto done);
+                  etrace.pid_trigger_list), goto err);
     }
 
-done:
-
-    assert_ext((rc = mlist_close(etrace.event_list)
-               ) == 0);
-    assert_ext((rc = mlist_close(etrace.pid_trigger_list)
-               ) == 0);
-
+    etrace_exit(0);
+err:
+    etrace_exit(1);
+    /*Shut up gcc */
     return 0;
 }
