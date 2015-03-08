@@ -58,7 +58,7 @@ struct listheader {
 
     /* Caller provided function used to search & sort list. Can be NULL if
      * search and sort is not supported */
-    int (*cmpfunc) (LDATA * lval, LDATA * rval);
+    int (*cmpfunc) (LDATA *lval, LDATA *rval);
     struct node *phead;         /* List-start */
     struct node *ptail;         /* List-end */
     struct node *bp;            /* Administrative pointer, i.e. back-pointer to the mlists node */

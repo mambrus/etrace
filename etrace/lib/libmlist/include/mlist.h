@@ -17,7 +17,6 @@
  *   Free Software Foundation, Inc.,                                       *
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
-
 #ifndef mlist_h
 #define mlist_h
 
@@ -59,15 +58,14 @@ struct node {
 
 /* Create a new mlist with payload size sz in hndl. Returns error code */
 int mlist_opencreate(int sz,
-                     int (*cmpfunc) (LDATA * lval, LDATA * rval),
-                     handle_t * hndl);
+                     int (*cmpfunc) (LDATA *lval, LDATA *rval), handle_t *hndl);
 
 /* Deletes a list handle */
 int mlist_close(handle_t hndl);
 
 /* Dup the list. Note this works as fdup, i.e. it's only the hande that's
   duplicated. The content is still the same (i.e. not a copy).*/
-int mlist_dup(handle_t * new_hndl, handle_t orig_hndl);
+int mlist_dup(handle_t *new_hndl, handle_t orig_hndl);
 
 /* Deletes mlist. Returns error code */
 int mlist_create(const handle_t handle);
@@ -79,14 +77,14 @@ struct node *mlist_prev(const handle_t handle);
 /* Go-to's */
 struct node *mlist_head(const handle_t handle);
 struct node *mlist_tail(const handle_t handle);
-LDATA *mlist_curr(const handle_t handle);
+struct node *mlist_curr(const handle_t handle);
 
 /* Node insert:
  * Note: Node will be allocated on heap and inserted in list at iterator
  * position, or at position indicated by name */
-struct node *mlist_add(const handle_t handle, const LDATA * data);
-struct node *mlist_add_last(const handle_t handle, const LDATA * data);
-struct node *mlist_add_first(const handle_t handle, const LDATA * data);
+struct node *mlist_add(const handle_t handle, const LDATA *data);
+struct node *mlist_add_last(const handle_t handle, const LDATA *data);
+struct node *mlist_add_first(const handle_t handle, const LDATA *data);
 
 /* Delete a node. Deletes a node at iterator position. Assumes payload is
  * already empty. Iterator position is shifted to node just after in list.
@@ -104,7 +102,7 @@ struct node *mlist_dstrct_last(const handle_t handle);
 struct node *mlist_dstrct_first(const handle_t handle);
 
 struct node *mlist_lseek(const handle_t handle, off_t offset, int whence);
-struct node *mlist_search(const handle_t handle, const LDATA * data);
+struct node *mlist_search(const handle_t handle, const LDATA *data);
 
 /* List header (meta-data) access functions */
 //struct node *mlist_curr(const handle_t handle);
@@ -119,5 +117,26 @@ int mlist_nlinks(const handle_t handle);
 */
 //struct node *mlist_head(const handle_t handle);
 //struct node *mlist_tail(const handle_t handle);
+
+/*----------------------------------------------------------------------*/
+/* Pay-load level access of corresponding node level functions          */
+/*----------------------------------------------------------------------*/
+static inline LDATA *mdata_curr(const handle_t handle)
+{
+    struct node *n;
+    return (n = mlist_curr(handle)) ? n->pl : NULL;
+};
+
+static inline LDATA *mdata_head(const handle_t handle)
+{
+    struct node *n;
+    return (n = mlist_head(handle)) ? n->pl : NULL;
+};
+
+static inline LDATA *mdata_tail(const handle_t handle)
+{
+    struct node *n;
+    return (n = mlist_tail(handle)) ? n->pl : NULL;
+};
 
 #endif                          /* mlist_h */

@@ -78,8 +78,7 @@ static inline void free_list(struct listheader *L)
 /* Operations list level                            */
 /* ================================================ */
 int mlist_opencreate(int sz,
-                     int (*cmpfunc) (LDATA * lval, LDATA * rval),
-                     handle_t * hndl)
+                     int (*cmpfunc) (LDATA *lval, LDATA *rval), handle_t *hndl)
 {
     struct listheader *L = NULL;
     assert_ext(mlistmod_data.isinit);
@@ -116,7 +115,7 @@ int mlist_opencreate(int sz,
     L->pl_sz = sz;
     L->cmpfunc = cmpfunc;
     mlistmod_data.nlists++;
-    *hndl = (handle_t) L;
+    *hndl = (handle_t)L;
     return 0;
 };
 
@@ -125,7 +124,7 @@ int mlist_opencreate(int sz,
  * still not thread safe (like any ordinary file, content is not thread
  * safe).
  * */
-int mlist_dup(handle_t * new_hndl, handle_t orig_hndl)
+int mlist_dup(handle_t *new_hndl, handle_t orig_hndl)
 {
     struct listheader *L;
     assert_ext(mlistmod_data.isinit);
@@ -138,7 +137,7 @@ int mlist_dup(handle_t * new_hndl, handle_t orig_hndl)
     L->owner = ((struct listheader *)orig_hndl);
     L->nr_links = 0;
 
-    *new_hndl = (handle_t) L;
+    *new_hndl = (handle_t)L;
     return 0;
 }
 
@@ -205,15 +204,14 @@ struct node *mlist_next(const handle_t handle)
     return (L->p);
 };
 
-/*Returns payload at current nodes position */
-LDATA *mlist_curr(const handle_t handle)
+struct node *mlist_curr(const handle_t handle)
 {
     assert_ext(mlistmod_data.isinit);
     assert_ext(handle && "invalid or not initialized");
 
     struct listheader *L = (struct listheader *)handle;
 
-    return (L->p->pl);
+    return (L->p);
 };
 
 struct node *mlist_prev(const handle_t handle)
@@ -236,6 +234,15 @@ struct node *mlist_head(const handle_t handle)
     return L->p = L->phead;
 };
 
+LDATA *mdata_first(const handle_t handle)
+{
+    assert_ext(mlistmod_data.isinit);
+    assert_ext(handle && "invalid or not initialized");
+
+    struct listheader *L = (struct listheader *)handle;
+    return L->p = L->phead;
+};
+
 struct node *mlist_tail(const handle_t handle)
 {
     assert_ext(mlistmod_data.isinit);
@@ -245,7 +252,7 @@ struct node *mlist_tail(const handle_t handle)
     return L->p = L->ptail;
 };
 
-struct node *mlist_add(const handle_t handle, const LDATA * data)
+struct node *mlist_add(const handle_t handle, const LDATA *data)
 {
     assert_ext(mlistmod_data.isinit);
     assert_ext(handle && "invalid or not initialized");
@@ -258,7 +265,7 @@ struct node *mlist_add(const handle_t handle, const LDATA * data)
     return NULL;
 };
 
-struct node *mlist_add_last(const handle_t handle, const LDATA * data)
+struct node *mlist_add_last(const handle_t handle, const LDATA *data)
 {
     assert_ext(mlistmod_data.isinit);
     assert_ext(handle && "invalid or not initialized");
@@ -294,7 +301,7 @@ struct node *mlist_add_last(const handle_t handle, const LDATA * data)
     return L->p;
 };
 
-struct node *mlist_add_first(const handle_t handle, const LDATA * data)
+struct node *mlist_add_first(const handle_t handle, const LDATA *data)
 {
     assert_ext(mlistmod_data.isinit);
     assert_ext(handle && "invalid or not initialized");
@@ -390,7 +397,7 @@ struct node *mlist_lseek(const handle_t handle, off_t offset, int whence)
     return NULL;
 };
 
-struct node *mlist_search(const handle_t handle, const LDATA * data)
+struct node *mlist_search(const handle_t handle, const LDATA *data)
 {
     assert_ext(mlistmod_data.isinit);
     assert_ext(handle && "invalid or not initialized");

@@ -65,7 +65,7 @@ void __fini __mlist_fini(void)
             fprintf(stderr,
                     "WARNING: Destructing un-freed pay-load [%p]. "
                     "List id: [%p]\n", mlistmod_data.mlists->pl, tlist);
-            rc = dstrct_mlist((handle_t) tlist);
+            rc = dstrct_mlist((handle_t)tlist);
             assert_ext(rc == 0);
         }
 
