@@ -102,19 +102,19 @@ static inline void assertfail(char *assertstr,
 #define FNC NULL
 #endif
 /***************************************************************************
- * ASSURE* / TRUEDO* macros
+ * ASSURE* / EXCEPTION* macros
  ***************************************************************************
  *
- * ASSURE     - Use as assert with the difference that it ignores NDEBUG.
+ * ASSURE      -Use as assert with the difference that it ignores NDEBUG.
  *              I.e. code inside '(' ')' will never be optimized away.
- * ASSURE_E   - Same as above, but has a dedicated exit ability instead of
+ * ASSURE_E    -Same as above, but has a dedicated exit ability instead of
  *              aborting (second argument). This can be call to (error)
  *              handling function or semantics like "goto" and "return"
- * TRUEDO     - Same as ASSURE, but with inverse logic. I.e. on "true" it
- *                 will abort.
+ * EXCEPTION   -Same as ASSURE, but with inverse logic. I.e. on "true" it
+ *              will abort.
  *              I.e. code inside '(' ')' will never be optimized away.
- * TRUEDO_E   - Same as above, ASSURE_E but with same inverse logic as
- *                 TRUEDO.
+ * EXCEPTION_E -Same as above, ASSURE_E but with same inverse logic as
+ *              EXCEPTION.
  *
  ***************************************************************************/
 #include <string.h>
@@ -125,14 +125,18 @@ static inline void assertfail(char *assertstr,
     #p, FNC, FLE, __LINE__ ) )
 # define ASSURE_E(p,e) if (!(p)) {(void) notify_failure( \
     #p, FNC, FLE, __LINE__ ); e;}
-# define TRUEDO(p,e) if (p) {(void) notify_failure( \
+# define EXCEPTION(p,e) if (p) {(void) notify_failure( \
+    #p, FNC, FLE, __LINE__ ); e;}
+# define EXCEPTION_E(p,e) if (p) {(void) notify_failure( \
     #p, FNC, FLE, __LINE__ ); e;}
 #else
 # define ASSURE(p) ((p) ? (void)0 : (void) notify_failure( \
     #p, __FUNCTION__, FLE, __LINE__ ) )
 # define ASSURE_E(p,e) if (!(p)) {(void) notify_failure( \
     #p, __FUNCTION__, FLE, __LINE__ ); e;}
-# define TRUEDO(p,e) if (p) {(void) notify_failure( \
+# define EXCEPTION(p,e) if (p) {(void) notify_failure( \
+    #p, __FUNCTION__, FLE, __LINE__ ); e;}
+# define EXCEPTION_E(p,e) if (p) {(void) notify_failure( \
     #p, __FUNCTION__, FLE, __LINE__ ); e;}
 #endif
 
@@ -157,7 +161,7 @@ static inline void assertfail(char *assertstr,
  *
  ***************************************************************************
    Use of the assert_* macros is discouraged as they will be discontinued.
-   Use the for new ASSURE* / TRUEDO* macros instead.
+   Use the for new ASSURE* / EXCEPTION* macros instead.
  ***************************************************************************/
 
 #include <stdio.h>
