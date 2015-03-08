@@ -200,8 +200,6 @@ struct node *mlist_next(const handle_t handle)
     assert_ext(handle && "invalid or not initialized");
 
     struct listheader *L = (struct listheader *)handle;
-    if (!L->p->next)
-        return (NULL);
 
     L->p = L->p->next;
     return (L->p);
@@ -214,8 +212,6 @@ LDATA *mlist_curr(const handle_t handle)
     assert_ext(handle && "invalid or not initialized");
 
     struct listheader *L = (struct listheader *)handle;
-    if (!L->p)
-        return (NULL);
 
     return (L->p->pl);
 };
@@ -226,8 +222,6 @@ struct node *mlist_prev(const handle_t handle)
     assert_ext(handle && "invalid or not initialized");
 
     struct listheader *L = (struct listheader *)handle;
-    if (!L->p->prev)
-        return (NULL);
 
     L->p = L->p->prev;
     return (L->p);
