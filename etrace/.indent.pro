@@ -51,6 +51,8 @@
 --case-indentation4
 
 /* Local types*/
+-T LDATA
+-T handle_t
 
 /* Target-system specific types  */
 -T FILE
@@ -64,3 +66,8 @@
 -T uint16_t
 -T uint32_t
 -T uint64_t
+
+/* POSIX types */
+-T regex_t
+-T regmatch_t
+-T regoff_t
