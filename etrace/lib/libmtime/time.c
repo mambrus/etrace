@@ -23,8 +23,6 @@
 
 /* NOTE: !!! These functions are in need of thorough testing !!! (TBD) */
 
-#define LDATA struct smpl_signal
-#include <mlist.h>
 #include <stdio.h>
 #include <assert.h>
 #include <unistd.h>

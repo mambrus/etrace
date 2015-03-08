@@ -28,7 +28,6 @@
 #include <log.h>
 #include <mtime.h>
 #include "opts.h"
-#define LDATA struct pid_trigger
 #include "proc.h"
 #include <mlist.h>
 #include "etrace.h"

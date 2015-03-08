@@ -20,8 +20,6 @@
 #ifndef etrace_h
 #define etrace_h
 
-#undef LDATA
-#define LDATA struct event
 #include <mlist.h>
 
 #include <limits.h>
