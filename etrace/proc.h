@@ -24,6 +24,7 @@
 #include <mlist.h>
 #include "etrace.h"
 
-int tid_populate(pid_t pid, handle_t pid_trigger_list, handle_t event_list);
+int tid_tolist(pid_t pid, handle_t pid_trigger_list);
+int tid_expand_events(handle_t pid_trigger_list, handle_t event_list);
 
 #endif                          /* proc_h */

@@ -72,7 +72,6 @@ void etrace_exit(int status)
 int main(int argc, char **argv)
 {
     int rc, cnt;
-    struct node *n;
 
     LOGI("etrace version v%s \n", VERSION);
 
@@ -98,13 +97,13 @@ int main(int argc, char **argv)
     LOGD("Out-file name: %s", etrace.outfname);
 
     /* Diagnostic print-out of events */
-    for (n = mlist_head(etrace.event_list), cnt = 0;
-         n; n = mlist_next(etrace.event_list)
-        ) {
+    for (mlist_head(etrace.event_list), cnt = 0;
+         mlist_curr(etrace.event_list); mlist_next(etrace.event_list), cnt++) {
+
         struct event *e;
         assert(n->pl);
-        e = mlist_curr(etrace.event_list);
-        LOGI("Event #%d:\n", cnt++);
+        e = mdata_curr(etrace.event_list);
+        LOGI("Event #%d:\n", cnt);
         if (strlen(e->name) == 0)
             LOGE("  %s\n", e->name);
         else
@@ -112,10 +111,25 @@ int main(int argc, char **argv)
         LOGI("  %s\n", e->filter);
     }
 
+    LOGD("Adding root-PID to list: %d\n", etrace.opts->pid);
+    ASSURE_E(mlist_add_last(etrace.pid_trigger_list, &(struct pid_trigger) {
+                            etrace.opts->pid}), goto err);
     if (opts.threads) {
-        ASSURE_E(tid_populate
-                 (etrace.opts->pid, etrace.pid_trigger_list,
-                  etrace.pid_trigger_list), goto err);
+        ASSURE_E(tid_tolist
+                 (etrace.opts->pid, etrace.pid_trigger_list), goto err);
+    }
+
+    tid_expand_events(etrace.pid_trigger_list, etrace.event_list);
+
+    /* Diagnostic print-out of pid_triggers */
+    for (mlist_head(etrace.pid_trigger_list), cnt = 0;
+         mlist_curr(etrace.pid_trigger_list);
+         mlist_next(etrace.pid_trigger_list), cnt++) {
+
+        struct pid_trigger *pd;
+        assert(n->pl);
+        pd = mdata_curr(etrace.pid_trigger_list);
+        LOGI("PID #%d :\n", pd->pid);
     }
 
     etrace_exit(0);

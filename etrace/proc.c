@@ -19,11 +19,13 @@
  ***************************************************************************/
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <config.h>
 #include <sys/types.h>
 #include <dirent.h>
-
 #include <assert.h>
+#include <regex.h>
+
 #include "assure.h"
 #include <log.h>
 #include <mtime.h>
@@ -32,10 +34,16 @@
 #include <mlist.h>
 #include "etrace.h"
 
+#define TID_REGEXP "%tid%"
+#define MAX_DGTS 16             /*Max number of digits in a PID */
+
+static inline int expand_each_event(pid_t, handle_t, handle_t);
+static int rreplace(char *buf, int size, regex_t *re, char *rp);
+
 /* Populate list with thread process id:s. On linux kernel V3+ this is very
 easy: https://lkml.org/lkml/2011/12/28/59
 */
-int tid_populate(pid_t pid, handle_t pid_trigger_list, handle_t event_list)
+int tid_tolist(pid_t pid, handle_t pid_trigger_list)
 {
     DIR *dp;
     struct dirent *ep;
@@ -49,9 +57,17 @@ int tid_populate(pid_t pid, handle_t pid_trigger_list, handle_t event_list)
     dp = opendir(dirname);
     if (dp != NULL) {
         while ((ep = readdir(dp))) {
-            LOGD("Adding PID to list: %d\n", ep->d_name);
-            ASSURE_E(mlist_add_last(pid_trigger_list, &pd), return 0);
-            cnt++;
+            if (ep->d_name[0] >= '0' && ep->d_name[0] <= '9') {
+                LOGD("Adding thread-PID to list: %s\n", ep->d_name);
+                pd.pid = atoi(ep->d_name);
+                if (pd.pid == pid) {
+                    LOGW("Trying to add root-PID (%d) "
+                         "as thread-PID (%d). Skipping...\n", pid, pd.pid);
+                    continue;
+                }
+                ASSURE_E(mlist_add_last(pid_trigger_list, &pd), return 0);
+                cnt++;
+            }
         }
         (void)closedir(dp);
     } else {
@@ -62,4 +78,102 @@ int tid_populate(pid_t pid, handle_t pid_trigger_list, handle_t event_list)
     LOGI("Read %d threads PID:s to list\n", cnt);
 
     return 1;
+}
+
+/* Iterate through PID's and for each, create a new list with a translated
+ * version of the event_list */
+int tid_expand_events(handle_t pid_trigger_list, handle_t event_list)
+{
+    int rc, cnt;
+    struct node *n;
+
+    for (n = mlist_head(pid_trigger_list), cnt = 0;
+         n; n = mlist_next(pid_trigger_list), cnt++) {
+        struct pid_trigger *pt;
+
+        assert(n->pl);
+        pt = mdata_curr(pid_trigger_list);
+        LOGD("PID #%d in progress\n", pt->pid);
+        assert_np((rc =
+                   mlist_opencreate(sizeof(struct efilter), NULL,
+                                    &pt->efilter_list)) == 0);
+        ASSURE_E(expand_each_event(pt->pid, pt->efilter_list, event_list),
+                 goto err);
+    }
+
+    LOGI("Build-up of %d interpreted event-filters one for each PID", cnt);
+
+    return 1;
+err:
+    return 0;
+}
+
+static inline int expand_each_event(pid_t pid, handle_t efilter_list,
+                                    handle_t event_list)
+{
+    regex_t re;
+    char numbuf[MAX_DGTS];
+    snprintf(numbuf, MAX_DGTS, "%d", pid);
+
+    assert_np(regcomp(&re, TID_REGEXP, REG_ICASE | REG_EXTENDED) == 0);
+
+    for (mlist_head(event_list); mlist_curr(event_list); mlist_next(event_list)) {
+        struct efilter ef;
+        struct event *e = mdata_curr(event_list);
+
+        assert(e);
+        ef.event = e;
+        strncpy(ef.filter, e->filter, FILTER_MAX);
+        EXCEPTION_E(rreplace(ef.filter, FILTER_MAX, &re, numbuf), goto err_rr);
+        LOGD("  Filter [%s]: [%s]->[%s]\n", ef.event->name,
+             ef.event->filter, ef.filter);
+
+        ASSURE_E(mlist_add_last(efilter_list, &ef), goto err_list);
+
+    }
+
+    regfree(&re);
+    return 1;
+err_rr:
+    regfree(&re);
+    LOGE("FAIL parsing");
+    return 0;
+err_list:
+    regfree(&re);
+    LOGE("Critical: list-operation");
+    return 0;
+
+}
+
+static int rreplace(char *buf, int size, regex_t *re, char *rp)
+{
+    char *pos;
+    int sub, so, n;
+    regmatch_t pmatch[10];      /* regoff_t is int so size is int */
+
+    if (regexec(re, buf, 10, pmatch, 0))
+        return 0;
+    for (pos = rp; *pos; pos++)
+        if (*pos == '\\' && *(pos + 1) > '0' && *(pos + 1) <= '9') {
+            so = pmatch[*(pos + 1) - 48].rm_so;
+            n = pmatch[*(pos + 1) - 48].rm_eo - so;
+            if (so < 0 || strlen(rp) + n - 1 > size)
+                return 1;
+            memmove(pos + n, pos + 2, strlen(pos) - 1);
+            memmove(pos, buf + so, n);
+            pos = pos + n - 2;
+        }
+    sub = pmatch[1].rm_so;      /* no repeated replace when sub >= 0 */
+    for (pos = buf; !regexec(re, pos, 1, pmatch, 0);) {
+        n = pmatch[0].rm_eo - pmatch[0].rm_so;
+        pos += pmatch[0].rm_so;
+        if (strlen(buf) - n + strlen(rp) + 1 > size)
+            return 1;
+        memmove(pos + strlen(rp), pos + n, strlen(pos) - n + 1);
+        memmove(pos, rp, strlen(rp));
+        pos += strlen(rp);
+        if (sub >= 0)
+            break;
+    }
+    return 0;
 }

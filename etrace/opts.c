@@ -108,7 +108,7 @@ static int opts_parse_opt(const char *cmd,
             break;
         case 'f':
             req_opt('f')->cnt++;
-            assert_np(event_node = mlist_curr(etrace.event_list));
+            assert_np(event_node = mdata_curr(etrace.event_list));
             if (strnlen(event_node->filter, FILTER_MAX) > 0) {
 
                 LOGE("Filer [%s] is overwritten by [%s] for event [%s] (#%d)",

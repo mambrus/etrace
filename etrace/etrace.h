@@ -25,18 +25,29 @@
 #include <limits.h>
 #define FILTER_MAX 255
 
+/* Root event definition */
 struct event {
-    char name[PATH_MAX];
+    char name[PATH_MAX];        /* Filename relative to tracefs root */
+    char filter[FILTER_MAX];    /* Filter expression. Note that this can be
+                                   abstract. In case several threads are to
+                                   be followed the string %tid% has special
+                                   meaning and will be translated into the
+                                   numerical PID for each thread. */
+};
+
+/* Event expression part expanded to be associated to a corresponding
+ * threads PID */
+struct efilter {
+    struct event *event;        /* Pointer to the event serving as template */
     char filter[FILTER_MAX];
 };
 
 /* PID trigger
- * The process-id, corresponding event.name and it's potentially transformed filter
+ * The process-id, with list of expanded event-filters
  */
 struct pid_trigger {
     pid_t pid;
-    char *event_name;
-    char filter[FILTER_MAX];
+    handle_t efilter_list;
 };
 
 struct etrace {
