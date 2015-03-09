@@ -24,11 +24,13 @@
 
 #include <limits.h>
 #define FILTER_MAX 255
+#define FINAL_FILTER_MAX 4096
 
 /* Root event definition */
 struct event {
+    int id;                     /* Unique incremental ID starting from 0 */
     char name[PATH_MAX];        /* Filename relative to tracefs root */
-    char filter[FILTER_MAX];    /* Filter expression. Note that this can be
+    char *filter;               /* Filter expression. Note that this can be
                                    abstract. In case several threads are to
                                    be followed the string %tid% has special
                                    meaning and will be translated into the
@@ -39,7 +41,7 @@ struct event {
  * threads PID */
 struct efilter {
     struct event *event;        /* Pointer to the event serving as template */
-    char filter[FILTER_MAX];
+    char efilter[FILTER_MAX];
 };
 
 /* PID trigger

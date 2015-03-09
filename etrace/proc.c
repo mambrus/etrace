@@ -108,6 +108,58 @@ err:
     return 0;
 }
 
+/*
+ * Takes every piece from the trigger_list and builds up final filters
+ * It will very actively modify the event-list => the filter string */
+int tid_concat_epieces(handle_t event_list, handle_t pid_trigger_list)
+{
+    int cnt, i;
+    int n_ev;
+
+    n_ev = mlist_len(event_list);
+    char *s_table[n_ev];
+    int i_table[n_ev];
+
+    for (i = 0; i < n_ev; i++) {
+        s_table[i] = malloc(FINAL_FILTER_MAX);
+        memset(s_table[i], 0, FINAL_FILTER_MAX);
+        i_table[i] = 0;
+    }
+
+    LOGV("Build-up of final event filter {#n PID,name,filter}:\n");
+    for (mlist_head(pid_trigger_list), cnt = 0;
+         mlist_curr(pid_trigger_list); mlist_next(pid_trigger_list)) {
+
+        struct pid_trigger *pd = mdata_curr(pid_trigger_list);
+        for (mlist_head(pd->efilter_list);
+             mlist_curr(pd->efilter_list);
+             mlist_next(pd->efilter_list), cnt++) {
+
+            struct efilter *ef = mdata_curr(pd->efilter_list);
+            int ti = ef->event->id;
+            i_table[ti] +=
+                sprintf(&(s_table[ti])[i_table[ti]], "( %s ) || ", ef->efilter);
+            LOGV("  #%d %d,%s,%s\n", cnt, pd->pid, ef->event->name,
+                 s_table[ti]);
+
+        }
+    }
+    /* Shorten strings somewhat to remove the final residual operator */
+    for (i = 0; i < n_ev; i++) {
+        (s_table[i])[i_table[i] - 3] = 0;
+    }
+
+    /* Finally replace the old filters with the newly created ones */
+    for (mlist_head(event_list), cnt = 0;
+         mlist_curr(event_list); mlist_next(event_list), cnt++) {
+
+        struct event *ev = mdata_curr(event_list);
+        free(ev->filter);
+        ev->filter = s_table[cnt];
+    }
+    return 1;
+}
+
 static inline int expand_each_event(pid_t pid, handle_t efilter_list,
                                     handle_t event_list)
 {
@@ -123,10 +175,10 @@ static inline int expand_each_event(pid_t pid, handle_t efilter_list,
 
         assert(e);
         ef.event = e;
-        strncpy(ef.filter, e->filter, FILTER_MAX);
-        EXCEPTION_E(rreplace(ef.filter, FILTER_MAX, &re, numbuf), goto err_rr);
+        strncpy(ef.efilter, e->filter, FILTER_MAX);
+        EXCEPTION_E(rreplace(ef.efilter, FILTER_MAX, &re, numbuf), goto err_rr);
         LOGD("  Filter [%s]: [%s]->[%s]\n", ef.event->name,
-             ef.event->filter, ef.filter);
+             ef.event->filter, ef.efilter);
 
         ASSURE_E(mlist_add_last(efilter_list, &ef), goto err_list);
 

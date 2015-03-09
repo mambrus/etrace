@@ -56,15 +56,44 @@ struct etrace etrace = {
 /* *INDENT-ON* */
 };
 
+static void free_content_event_list(handle_t handle)
+{
+    int cnt;
+
+    for (mlist_head(handle), cnt = 0;
+         mlist_curr(handle); mlist_next(handle), cnt++) {
+
+        struct event *e = mdata_curr(handle);
+        free(e->filter);
+    }
+    LOGD("Freed %d dynamic elements from event_list\n", cnt);
+}
+
+static void free_content_pid_trigger_list(handle_t handle)
+{
+    int cnt;
+
+    /* Closing any efilter list (no dynamic elements) */
+    for (mlist_head(etrace.pid_trigger_list), cnt = 0;
+         mlist_curr(etrace.pid_trigger_list);
+         mlist_next(etrace.pid_trigger_list), cnt++) {
+
+        struct pid_trigger *pd = mdata_curr(etrace.pid_trigger_list);
+        assert_ext(mlist_close(pd->efilter_list) == 0);
+    }
+    LOGD("Freed %d efilter_list from pid_trigger_list\n", cnt);
+}
+
 /* Cleanup before exit even if exit-with-error */
 void etrace_exit(int status)
 {
-    int rc;
+    LOGD("etrace_exit initiated\n");
 
-    assert_ext((rc = mlist_close(etrace.event_list)
-               ) == 0);
-    assert_ext((rc = mlist_close(etrace.pid_trigger_list)
-               ) == 0);
+    free_content_event_list(etrace.event_list);
+    free_content_pid_trigger_list(etrace.pid_trigger_list);
+
+    assert_ext(mlist_close(etrace.event_list) == 0);
+    assert_ext(mlist_close(etrace.pid_trigger_list) == 0);
 
     exit(status);
 }
@@ -119,17 +148,36 @@ int main(int argc, char **argv)
                  (etrace.opts->pid, etrace.pid_trigger_list), goto err);
     }
 
-    tid_expand_events(etrace.pid_trigger_list, etrace.event_list);
+    ASSURE_E(tid_expand_events(etrace.pid_trigger_list, etrace.event_list),
+             goto err);
 
     /* Diagnostic print-out of pid_triggers */
+    LOGD("List of pid_triggers {#n PID,name,filter}:\n");
     for (mlist_head(etrace.pid_trigger_list), cnt = 0;
          mlist_curr(etrace.pid_trigger_list);
-         mlist_next(etrace.pid_trigger_list), cnt++) {
+         mlist_next(etrace.pid_trigger_list)) {
 
-        struct pid_trigger *pd;
-        assert(n->pl);
-        pd = mdata_curr(etrace.pid_trigger_list);
-        LOGI("PID #%d :\n", pd->pid);
+        struct pid_trigger *pd = mdata_curr(etrace.pid_trigger_list);
+        for (mlist_head(pd->efilter_list);
+             mlist_curr(pd->efilter_list);
+             mlist_next(pd->efilter_list), cnt++) {
+
+            struct efilter *ef = mdata_curr(pd->efilter_list);
+            LOGD("  #%d %d,%s,%s\n", cnt, pd->pid, ef->event->name,
+                 ef->efilter);
+        }
+    }
+
+    ASSURE_E(tid_concat_epieces(etrace.event_list, etrace.pid_trigger_list),
+             goto err);
+
+    /* Informative print-out of final event with filters  */
+    LOGI("List of pid_triggers {event::filter}:\n");
+    for (mlist_head(etrace.event_list), cnt = 0;
+         mlist_curr(etrace.event_list); mlist_next(etrace.event_list), cnt++) {
+
+        struct event *ev = mdata_curr(etrace.event_list);
+        LOGI("%s::%s\n", ev->name, ev->filter);
     }
 
     etrace_exit(0);

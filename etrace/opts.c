@@ -45,6 +45,8 @@
 #define at_least   0
 #define precisely -1
 
+static int uq_eid = 0;
+
 struct req_opt {
     int val;                    /* Flag value (option letter) */
     int req;                    /* Times required to be seen at least */
@@ -104,12 +106,14 @@ static int opts_parse_opt(const char *cmd,
         case 'e':
             req_opt('e')->cnt++;
             strncpy(event.name, arg, PATH_MAX);
+            event.id = uq_eid++;
             assert_np(mlist_add_last(etrace.event_list, &event));
             break;
         case 'f':
             req_opt('f')->cnt++;
             assert_np(event_node = mdata_curr(etrace.event_list));
-            if (strnlen(event_node->filter, FILTER_MAX) > 0) {
+            if (event_node->filter
+                && strnlen(event_node->filter, FILTER_MAX) > 0) {
 
                 LOGE("Filer [%s] is overwritten by [%s] for event [%s] (#%d)",
                      event_node->filter, arg, event_node->name,
@@ -118,7 +122,7 @@ static int opts_parse_opt(const char *cmd,
                 LOGE("Check order for options -e and -f\n");
                 return E_OPT_USAGE;
             }
-            strncpy(event_node->filter, arg, FILTER_MAX);
+            event_node->filter = strndup(arg, FILTER_MAX);
             break;
         case 'i':
             req_opt('i')->cnt++;
@@ -250,7 +254,7 @@ int opts_check(const struct opts *opts)
     struct option *op = long_options;
     struct req_opt *rop = req_opts;
 
-    LOGV("Checking if mandatory options are set\n");
+    LOGD("Checking if mandatory options are set\n");
 
     for (rop = req_opts, op = long_options; op->name != NULL; rop++, op++) {
         assert(op->val == rop->val);
