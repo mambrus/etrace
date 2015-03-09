@@ -18,6 +18,8 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
+/* -Functions that do something with the system (rather loosely speaking)- */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <config.h>
@@ -25,6 +27,10 @@
 #include <dirent.h>
 #include <assert.h>
 #include <regex.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <errno.h>
+#include <stdarg.h>
 
 #include "assure.h"
 #include <log.h>
@@ -38,12 +44,14 @@
 #define MAX_DGTS 16             /*Max number of digits in a PID */
 
 static inline int expand_each_event(pid_t, handle_t, handle_t);
-static int rreplace(char *buf, int size, regex_t *re, char *rp);
+static inline int rreplace(char *buf, int size, regex_t *re, char *rp);
+
+extern struct etrace etrace;
 
 /* Populate list with thread process id:s. On linux kernel V3+ this is very
 easy: https://lkml.org/lkml/2011/12/28/59
 */
-int tid_tolist(pid_t pid, handle_t pid_trigger_list)
+int proc_tid_tolist(pid_t pid, handle_t pid_trigger_list)
 {
     DIR *dp;
     struct dirent *ep;
@@ -82,7 +90,7 @@ int tid_tolist(pid_t pid, handle_t pid_trigger_list)
 
 /* Iterate through PID's and for each, create a new list with a translated
  * version of the event_list */
-int tid_expand_events(handle_t pid_trigger_list, handle_t event_list)
+int proc_expand_events(handle_t pid_trigger_list, handle_t event_list)
 {
     int rc, cnt;
     struct node *n;
@@ -111,7 +119,7 @@ err:
 /*
  * Takes every piece from the trigger_list and builds up final filters
  * It will very actively modify the event-list => the filter string */
-int tid_concat_epieces(handle_t event_list, handle_t pid_trigger_list)
+int proc_concat_epieces(handle_t event_list, handle_t pid_trigger_list)
 {
     int cnt, i;
     int n_ev;
@@ -160,6 +168,101 @@ int tid_concat_epieces(handle_t event_list, handle_t pid_trigger_list)
     return 1;
 }
 
+/*
+ * Transports filters and corresponding events. I.e. enables ftrace by
+ * arming it. */
+int proc_ftrace_arm(handle_t event_list)
+{
+    int cnt;
+    struct event *ev;
+
+    LOGD("Transfer list to tracefs \n");
+    for (mlist_head(event_list), cnt = 0;
+         mlist_curr(event_list); mlist_next(event_list), cnt++) {
+
+        ev = mdata_curr(event_list);
+        ASSURE_E(write_by_name
+                 ("0", "%s/events/%s/enable", etrace.tracefs_path, ev->name),
+                 goto err);
+        ASSURE_E(write_by_name
+                 (ev->filter, "%s/events/%s/filter", etrace.tracefs_path,
+                  ev->name), goto err);
+        ASSURE_E(write_by_name
+                 ("1", "%s/events/%s/enable", etrace.tracefs_path, ev->name),
+                 goto err);
+    }
+    return 1;
+err:
+    LOGE("Failure trying to arm event #%d/%s\n", ev->id, ev->name);
+    return 0;
+}
+
+/*
+ * Write to file by name
+ * */
+int write_by_name(const char *outbuff, const char *format, ...)
+{
+    char fname[PATH_MAX];
+    int fd, ssize, nchars;
+    va_list args;
+
+    va_start(args, format);
+    memset(fname, 0, PATH_MAX);
+    vsnprintf(fname, PATH_MAX, format, args);
+    va_end(args);
+
+    LOGD("Accessing file: %s\n", fname);
+    ASSURE_E((fd = open(fname, O_WRONLY)) != -1, goto io_err);
+    LOGV("Writing buffer: %s\n", outbuff);
+    ssize = strlen(outbuff);
+    ASSURE_E((nchars = write(fd, outbuff, ssize)) != -1, goto io_err);
+    LOGD("Wrote %d/%d\n", ssize, nchars);
+    ASSURE_E(ssize == nchars, goto wr_err);
+
+    close(fd);
+    return 1;
+
+io_err:
+    close(fd);
+    LOGE("File operation failed with errno: %d \"%s\"\n", errno,
+         strerror(errno));
+    return 0;
+wr_err:
+    close(fd);
+    LOGE("Didn't write full buffer: %d/%d\n", ssize, nchars);
+    return 0;
+}
+
+/*
+ * Read from file by name
+ * */
+int read_by_name(char *outbuff, int ssize, const char *format, ...)
+{
+    char fname[PATH_MAX];
+    int fd, nchars;
+    va_list args;
+
+    va_start(args, format);
+    memset(fname, 0, PATH_MAX);
+    vsnprintf(fname, PATH_MAX, format, args);
+    va_end(args);
+
+    LOGD("Accessing file: %s\n", fname);
+    ASSURE_E((fd = open(fname, O_RDONLY)) != -1, goto io_err);
+    LOGV("Writing buffer: %s\n", outbuff);
+    ASSURE_E((nchars = read(fd, outbuff, ssize)) >= 0, goto io_err);
+    LOGD("Read %d\n", nchars);
+
+    close(fd);
+    return nchars;
+
+io_err:
+    close(fd);
+    LOGE("File operation failed with errno: %d \"%s\"\n", errno,
+         strerror(errno));
+    return nchars;
+}
+
 static inline int expand_each_event(pid_t pid, handle_t efilter_list,
                                     handle_t event_list)
 {
@@ -197,7 +300,10 @@ err_list:
 
 }
 
-static int rreplace(char *buf, int size, regex_t *re, char *rp)
+/*
+ * Replace occurrences (defined by compiled re) in buff by rp
+ * */
+static inline int rreplace(char *buf, int size, regex_t *re, char *rp)
 {
     char *pos;
     int sub, so, n;

@@ -58,6 +58,7 @@ struct etrace {
     char outfname[PATH_MAX];
     handle_t pid_trigger_list;
     handle_t event_list;
+    char tracefs_path[PATH_MAX];
 };
 
 void etrace_exit(int status);

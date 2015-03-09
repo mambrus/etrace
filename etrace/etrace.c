@@ -117,13 +117,22 @@ int main(int argc, char **argv)
     ASSURE_E(opts_check(&opts) == OPT_OK, goto err);
     LOGI("Option passed rule-check OK\n", rc);
 
-    log_test();
-
     assert_np(time_now(&etrace.stime));
     sprintf(etrace.outfname, "%d_%06d_%06d_%d.etrace", etrace.opts->rid,
             (int)etrace.stime.tv_sec, (int)etrace.stime.tv_usec,
             etrace.opts->pid);
     LOGD("Out-file name: %s", etrace.outfname);
+
+    snprintf(etrace.tracefs_path, PATH_MAX, "%s/tracing", opts.debugfs_path);
+
+    /* Make sure tracing is stopped */
+    ASSURE_E(write_by_name("0", "%s/tracing_on", etrace.tracefs_path),
+             goto err);
+    /* Make sure nop is really chosen */
+    ASSURE_E(write_by_name("nop", "%s/current_tracer", etrace.tracefs_path),
+             goto err);
+    /* Clear trace buffer */
+    ASSURE_E(write_by_name("0", "%s/trace", etrace.tracefs_path), goto err);
 
     /* Diagnostic print-out of events */
     for (mlist_head(etrace.event_list), cnt = 0;
@@ -144,11 +153,11 @@ int main(int argc, char **argv)
     ASSURE_E(mlist_add_last(etrace.pid_trigger_list, &(struct pid_trigger) {
                             etrace.opts->pid}), goto err);
     if (opts.threads) {
-        ASSURE_E(tid_tolist
+        ASSURE_E(proc_tid_tolist
                  (etrace.opts->pid, etrace.pid_trigger_list), goto err);
     }
 
-    ASSURE_E(tid_expand_events(etrace.pid_trigger_list, etrace.event_list),
+    ASSURE_E(proc_expand_events(etrace.pid_trigger_list, etrace.event_list),
              goto err);
 
     /* Diagnostic print-out of pid_triggers */
@@ -168,21 +177,30 @@ int main(int argc, char **argv)
         }
     }
 
-    ASSURE_E(tid_concat_epieces(etrace.event_list, etrace.pid_trigger_list),
+    ASSURE_E(proc_concat_epieces(etrace.event_list, etrace.pid_trigger_list),
              goto err);
 
     /* Informative print-out of final event with filters  */
-    LOGI("List of pid_triggers {event::filter}:\n");
+    LOGV("List of pid_triggers {event::filter}:\n");
     for (mlist_head(etrace.event_list), cnt = 0;
          mlist_curr(etrace.event_list); mlist_next(etrace.event_list), cnt++) {
 
         struct event *ev = mdata_curr(etrace.event_list);
-        LOGI("%s::%s\n", ev->name, ev->filter);
+        LOGV("%s::%s\n", ev->name, ev->filter);
     }
+    ASSURE_E(proc_ftrace_arm(etrace.event_list), goto err);
+
+    LOGI("Tracing starts\n");
+    ASSURE_E(write_by_name("1", "%s/tracing_on", etrace.tracefs_path),
+             goto err);
+    sleep(1);
+    LOGI("Tracing stops\n");
+    ASSURE_E(write_by_name("0", "%s/tracing_on", etrace.tracefs_path),
+             goto err);
 
     etrace_exit(0);
 err:
     etrace_exit(1);
-    /*Shut up gcc */
+    /* GCC, please shut up! */
     return 0;
 }

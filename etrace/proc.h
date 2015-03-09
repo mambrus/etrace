@@ -24,8 +24,12 @@
 #include <mlist.h>
 #include "etrace.h"
 
-int tid_tolist(pid_t pid, handle_t pid_trigger_list);
-int tid_expand_events(handle_t pid_trigger_list, handle_t event_list);
-int tid_concat_epieces(handle_t event_list, handle_t pid_trigger_list);
+int proc_tid_tolist(pid_t pid, handle_t pid_trigger_list);
+int proc_expand_events(handle_t pid_trigger_list, handle_t event_list);
+int proc_concat_epieces(handle_t event_list, handle_t pid_trigger_list);
+int proc_ftrace_arm(handle_t event_list);
+
+int write_by_name(const char *outbuff, const char *format, ...);
+int read_by_name(char *outbuff, int ssize, const char *format, ...);
 
 #endif                          /* proc_h */
