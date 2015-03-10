@@ -55,9 +55,10 @@
 /* General opts */
 struct opts {
     log_level *loglevel;        /* Verbosity level */
-    unsigned ptime;             /* Time to harvest i uS */
+    unsigned ptime;             /* Time to harvest in uS */
     char debugfs_path[PATH_MAX];    /* Path to where Linux debugfs is mounted */
     char workdir[PATH_MAX];     /* Output directory */
+    char outfname[PATH_MAX];    /* Output filename (optional, normally automatic) */
     pid_t pid;                  /* Process to trace */
     int threads;                /* True if threads too */
     unsigned rid;               /* Run ID */

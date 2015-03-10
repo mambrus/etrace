@@ -95,6 +95,10 @@ static int opts_parse_opt(const char *cmd,
             req_opt('w')->cnt++;
             strncpy(opts->workdir, arg, PATH_MAX);
             break;
+        case 'o':
+            req_opt('o')->cnt++;
+            strncpy(opts->outfname, arg, PATH_MAX);
+            break;
         case 'p':
             req_opt('p')->cnt++;
             opts->pid = arg ? atoi(arg) : 0;
@@ -169,6 +173,7 @@ static struct option long_options[] = {
     {"period",         required_argument,  0,  'T'},
     {"debugfs",        required_argument,  0,  'm'},
     {"workdir",        required_argument,  0,  'w'},
+    {"out-file",       required_argument,  0,  'o'},
     {"process",        required_argument,  0,  'p'},
     {"with-threads",   no_argument,        0,  't'},
     {"event",          no_argument,        0,  'e'},
@@ -192,6 +197,7 @@ static struct req_opt req_opts[] = {
     {'T',  not_req,    precisely,  0},
     {'m',  not_req,    precisely,  0},
     {'w',  not_req,    precisely,  0},
+    {'o',  not_req,    precisely,  0},
     {'p',  mandatory,  at_least,   0},
     {'t',  not_req,    precisely,  0},
     {'e',  mandatory,  at_least,   0},
@@ -302,7 +308,7 @@ int opts_parse(int argc, char **argv, struct opts *opts)
     while (1) {
         int option_index = 0;
         int c = getopt_long(argc, argv,
-                            "v:T:m:p:te:f:i:w:zDuhV",
+                            "v:T:m:p:te:f:i:w:o:zDuhV",
                             long_options,
                             &option_index);
         /* Detect the end of the options. */

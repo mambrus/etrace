@@ -54,8 +54,10 @@ struct pid_trigger {
 
 struct etrace {
     struct opts *opts;
+    pid_t pid;
     struct timeval stime;
     char outfname[PATH_MAX];
+    int out_fd;
     handle_t pid_trigger_list;
     handle_t event_list;
     char tracefs_path[PATH_MAX];

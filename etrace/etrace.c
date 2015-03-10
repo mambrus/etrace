@@ -21,6 +21,9 @@
 #include <stdio.h>
 #include <config.h>
 #include <sys/time.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <errno.h>
 
 //#undef NDEBUG
 #define NDEBUG
@@ -32,6 +35,8 @@
 #include "etrace.h"
 #include "proc.h"
 #include <mlist.h>
+
+#define CPY_MAX 4096
 
 /* This binds when global variable initialization is run in .start, i.e.
  * before CTOR */
@@ -52,7 +57,9 @@ struct opts opts = {
 
 struct etrace etrace = {
 /* *INDENT-OFF* */
-    .opts             = &opts,
+    .opts           = &opts,
+    .pid            = -1,
+    .out_fd         = 1  
 /* *INDENT-ON* */
 };
 
@@ -101,6 +108,9 @@ void etrace_exit(int status)
 int main(int argc, char **argv)
 {
     int rc, cnt;
+    char *tfname;
+
+    tfname = malloc(PATH_MAX);
 
     LOGI("etrace version v%s \n", VERSION);
 
@@ -112,16 +122,40 @@ int main(int argc, char **argv)
                                  &etrace.pid_trigger_list)
                ) == 0);
 
+    memset(opts.outfname, 0, PATH_MAX);
+    memset(etrace.outfname, 0, PATH_MAX);
     ASSURE_E((rc = opts_parse(argc, argv, &opts)) > 0, goto err);
     LOGI("Parsed %d options.\n", rc);
     ASSURE_E(opts_check(&opts) == OPT_OK, goto err);
     LOGI("Option passed rule-check OK\n", rc);
 
+    etrace.pid = opts.pid;
     assert_np(time_now(&etrace.stime));
-    sprintf(etrace.outfname, "%d_%06d_%06d_%d.etrace", etrace.opts->rid,
-            (int)etrace.stime.tv_sec, (int)etrace.stime.tv_usec,
-            etrace.opts->pid);
-    LOGD("Out-file name: %s", etrace.outfname);
+
+    if (strlen(opts.outfname)) {
+        /* Out to file, but deduct the filename */
+
+        sprintf(etrace.outfname, "%d_%06d_%06d_%d.etrace", etrace.opts->rid,
+                (int)etrace.stime.tv_sec, (int)etrace.stime.tv_usec,
+                etrace.opts->pid);
+        snprintf(tfname, PATH_MAX, "%s/%s", opts.workdir, etrace.outfname);
+    } else {
+        if (!(strcmp(opts.outfname, "-"))) {
+            if (opts.outfname[0] == '/') {
+                strncpy(etrace.outfname, opts.outfname, PATH_MAX);
+            } else {
+                snprintf(tfname, PATH_MAX, "%s/%s", opts.workdir,
+                         etrace.outfname);
+            }
+        }
+    }
+    if ((strlen(etrace.outfname) == 0) && (!(strcmp(etrace.outfname, "-")))) {
+        LOGD("Out-file name: %s\n", tfname);
+        ASSURE_E((etrace.out_fd = open(tfname, O_WRONLY)) != -1, goto open_err);
+    } else {
+        LOGD("Writing output to stdout\n");
+    }
+    free(tfname);
 
     snprintf(etrace.tracefs_path, PATH_MAX, "%s/tracing", opts.debugfs_path);
 
@@ -160,6 +194,8 @@ int main(int argc, char **argv)
     ASSURE_E(proc_expand_events(etrace.pid_trigger_list, etrace.event_list),
              goto err);
 
+    ASSURE_E(proc_pheader(&etrace), goto err);
+
     /* Diagnostic print-out of pid_triggers */
     LOGD("List of pid_triggers {#n PID,name,filter}:\n");
     for (mlist_head(etrace.pid_trigger_list), cnt = 0;
@@ -193,12 +229,46 @@ int main(int argc, char **argv)
     LOGI("Tracing starts\n");
     ASSURE_E(write_by_name("1", "%s/tracing_on", etrace.tracefs_path),
              goto err);
-    sleep(1);
+    usleep(opts.ptime);
     LOGI("Tracing stops\n");
     ASSURE_E(write_by_name("0", "%s/tracing_on", etrace.tracefs_path),
              goto err);
 
+    {
+        /* Copy trace buffer to output */
+        char cpy_buf[CPY_MAX];
+        char tfname[PATH_MAX];
+        int fd_in, rc, done = 0;
+
+        snprintf(tfname, PATH_MAX, "%s/trace", etrace.tracefs_path);
+        LOGD("Accessing file: %s\n", tfname);
+        ASSURE_E((fd_in = open(tfname, O_RDONLY)) != -1, goto open_err);
+
+        /* Copy trace buffer to output */
+        while (!done) {
+            rc = read(fd_in, cpy_buf, CPY_MAX);
+            if (rc > 0) {
+                rc = write(etrace.out_fd, cpy_buf, rc);
+            } else {
+                if (rc == EAGAIN || rc == EINTR) {
+                    LOGW("EAGAIN or rc==EINTR happened. Restarting read.\n");
+                } else {
+                    ASSURE_E(rc == 0, goto io_err);
+                    done = 1;
+                }
+            }
+        }
+    }
+
     etrace_exit(0);
+
+io_err:
+    if (etrace.out_fd > 2) {
+        close(etrace.out_fd);
+    }
+open_err:
+    LOGE("File operation failed with errno: %d \"%s\"\n", errno,
+         strerror(errno));
 err:
     etrace_exit(1);
     /* GCC, please shut up! */
