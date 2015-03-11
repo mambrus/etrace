@@ -1,22 +1,22 @@
 /***************************************************************************
- *   Copyright (C) 2015 by Michael Ambrus                                  *
- *   michael.ambrus@sonymobile.com                                         *
- *                                                                         *
- *   This program is free software; you can redistribute it and/or modify  *
- *   it under the terms of the GNU General Public License as published by  *
- *   the Free Software Foundation; either version 2 of the License, or     *
- *   (at your option) any later version.                                   *
- *                                                                         *
- *   This program is distributed in the hope that it will be useful,       *
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of        *
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         *
- *   GNU General Public License for more details.                          *
- *                                                                         *
- *   You should have received a copy of the GNU General Public License     *
- *   along with this program; if not, write to the                         *
- *   Free Software Foundation, Inc.,                                       *
- *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
- ***************************************************************************/
+*   Copyright (C) 2015 by Michael Ambrus                                  *
+*   michael.ambrus@sonymobile.com                                         *
+*                                                                         *
+*   This program is free software; you can redistribute it and/or modify  *
+*   it under the terms of the GNU General Public License as published by  *
+*   the Free Software Foundation; either version 2 of the License, or     *
+*   (at your option) any later version.                                   *
+*                                                                         *
+*   This program is distributed in the hope that it will be useful,       *
+*   but WITHOUT ANY WARRANTY; without even the implied warranty of        *
+*   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         *
+*   GNU General Public License for more details.                          *
+*                                                                         *
+*   You should have received a copy of the GNU General Public License     *
+*   along with this program; if not, write to the                         *
+*   Free Software Foundation, Inc.,                                       *
+*   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
+***************************************************************************/
 
 #include <stdio.h>
 #include <config.h>
@@ -39,7 +39,7 @@
 #define CPY_MAX 4096
 
 /* This binds when global variable initialization is run in .start, i.e.
- * before CTOR */
+* before CTOR */
 log_level log_filter_level = DEF_LOG_LEVEL;
 
 struct opts opts = {
@@ -80,7 +80,7 @@ static void free_content_pid_trigger_list(handle_t handle)
 {
     int cnt;
 
-    /* Closing any efilter list (no dynamic elements) */
+/* Closing any efilter list (no dynamic elements) */
     for (mlist_head(etrace.pid_trigger_list), cnt = 0;
          mlist_curr(etrace.pid_trigger_list);
          mlist_next(etrace.pid_trigger_list), cnt++) {
@@ -166,7 +166,15 @@ int main(int argc, char **argv)
     ASSURE_E(write_by_name("nop", "%s/current_tracer", etrace.tracefs_path),
              goto err);
     /* Clear trace buffer */
-    ASSURE_E(write_by_name("0", "%s/trace", etrace.tracefs_path), goto err);
+    //ASSURE_E(write_by_name("0", "%s/trace", etrace.tracefs_path), goto err);
+    {
+        FILE *f;
+        ASSURE_E((f =
+                  fopen("/sys/kernel/debug/tracing/trace", "w")) != NULL,
+                 goto err);
+
+        fprintf(f, "");
+    }
 
     /* Diagnostic print-out of events */
     for (mlist_head(etrace.event_list), cnt = 0;
