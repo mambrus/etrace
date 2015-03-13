@@ -17,13 +17,16 @@ function maxof() {
         cut -f1 -d" "
 }
 
-function _mytrace() {
-	sudo etrace -p$(maxof $1) -t \
-		-e sched/sched_wakeup -f 'common_pid == %tid%' \
-		-e sched/sched_switch -f 'common_pid == %tid%' \
-		-verror \
-		-T$2 | \
-			grep -vE '^#'
+# Some vendors use white-space in their process-names which is extremely
+# inconvenient for post-processing.
+# Fix by replace ' ' by '#' but only in process name
+function fix_pname(){
+    cat -- | \
+        grep -vE '^#' | \
+        awk -F"-" '{
+            PNAME=gensub("([[:graph:]])( )","\\1#","g",$1);
+            print PNAME"-"$2$3$4
+        }';
 }
 
 function mytrace() {
@@ -45,9 +48,9 @@ function mytrace() {
 		-e sched/sched_switch -f 'common_pid == %tid%' \
 		-e sched/sched_wait_task -f 'common_pid == %tid%' \
 		-e sched/sched_wakeup -f 'common_pid == %tid%' \
+		-e sched/sched_wakeup_new -f 'common_pid == %tid%' \
 		-verror \
-		-T$2 | \
-			grep -vE '^#'
+		-T$2 | fix_pname
 }
 
 function forever_etrace() {
@@ -56,7 +59,7 @@ function forever_etrace() {
 	done
 }
 
-forever_etrace "${@}"
+#forever_etrace "${@}"
 
 #To unset if sourced: 
 # for D in $(cat ../bin/cont_trace.sh | grep function | cut -f2 -d" " | \
