@@ -1,22 +1,22 @@
 /***************************************************************************
-*   Copyright (C) 2015 by Michael Ambrus                                  *
-*   michael.ambrus@sonymobile.com                                         *
-*                                                                         *
-*   This program is free software; you can redistribute it and/or modify  *
-*   it under the terms of the GNU General Public License as published by  *
-*   the Free Software Foundation; either version 2 of the License, or     *
-*   (at your option) any later version.                                   *
-*                                                                         *
-*   This program is distributed in the hope that it will be useful,       *
-*   but WITHOUT ANY WARRANTY; without even the implied warranty of        *
-*   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         *
-*   GNU General Public License for more details.                          *
-*                                                                         *
-*   You should have received a copy of the GNU General Public License     *
-*   along with this program; if not, write to the                         *
-*   Free Software Foundation, Inc.,                                       *
-*   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
-***************************************************************************/
+ *   Copyright (C) 2015 by Michael Ambrus                                  *
+ *   michael.ambrus@sonymobile.com                                         *
+ *                                                                         *
+ *   This program is free software; you can redistribute it and/or modify  *
+ *   it under the terms of the GNU General Public License as published by  *
+ *   the Free Software Foundation; either version 2 of the License, or     *
+ *   (at your option) any later version.                                   *
+ *                                                                         *
+ *   This program is distributed in the hope that it will be useful,       *
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of        *
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         *
+ *   GNU General Public License for more details.                          *
+ *                                                                         *
+ *   You should have received a copy of the GNU General Public License     *
+ *   along with this program; if not, write to the                         *
+ *   Free Software Foundation, Inc.,                                       *
+ *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
+ ***************************************************************************/
 
 #include <stdio.h>
 #include <config.h>
@@ -237,20 +237,29 @@ int main(int argc, char **argv)
     LOGI("Tracing starts\n");
     ASSURE_E(write_by_name("1", "%s/tracing_on", etrace.tracefs_path),
              goto err);
-    usleep(opts.ptime);
-    LOGI("Tracing stops\n");
-    ASSURE_E(write_by_name("0", "%s/tracing_on", etrace.tracefs_path),
-             goto err);
+//    usleep(opts.ptime);
+//    LOGI("Tracing stops\n");
+//    ASSURE_E(write_by_name("0", "%s/tracing_on", etrace.tracefs_path),
+//             goto err);
 
-    {
+int fd_in;
+char tofname[PATH_MAX];
+snprintf(tofname, PATH_MAX, "%s/trace_pipe", etrace.tracefs_path);
+LOGD("Accessing file: %s\n", tofname);
+ASSURE_E((fd_in = open(tofname, O_RDONLY)) != -1, goto open_err);
+
+//#ifdef NEVER
+    while(1){
         /* Copy trace buffer to output */
         char cpy_buf[CPY_MAX];
-        char tfname[PATH_MAX];
-        int fd_in, rc, done = 0;
+        //char tofname[PATH_MAX];
+        int /*fd_in,*/ rc, done = 0;
 
-        snprintf(tfname, PATH_MAX, "%s/trace", etrace.tracefs_path);
-        LOGD("Accessing file: %s\n", tfname);
-        ASSURE_E((fd_in = open(tfname, O_RDONLY)) != -1, goto open_err);
+#ifdef NEVER
+        snprintf(tofname, PATH_MAX, "%s/trace", etrace.tracefs_path);
+        LOGD("Accessing file: %s\n", tofname);
+        ASSURE_E((fd_in = open(tofname, O_RDONLY)) != -1, goto open_err);
+#endif
 
         /* Copy trace buffer to output */
         while (!done) {
@@ -266,7 +275,9 @@ int main(int argc, char **argv)
                 }
             }
         }
+        usleep(opts.ptime);
     }
+//#endif //NEVER
 
     etrace_exit(0);
 
