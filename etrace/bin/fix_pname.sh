@@ -18,10 +18,9 @@ function fix_pname(){
         function ltrim(s) { sub(/^[ \t\r\n]+/, "", s); return s }
         function rtrim(s) { sub(/[ \t\r\n]+$/, "", s); return s }
         function trim(s) { return rtrim(ltrim(s)); }
+        function rplace(s, r) { sub(/[[:space:]]+/, r, s); return s }
         {
-            cmd="echo '\''"trim($1)"'\'' | tr '\'' '\'' '\''#'\''"
-            cmd | getline pname
-            close(cmd)
+            pname=rplace(trim($1), "#");
             printf("%21s  ",pname);
             print "["$2$3$4$5$6
         }'
