@@ -14,11 +14,21 @@ SCRIPTS_DIR=$(dirname $(readlink -f $0))
 function fix_pname(){
     cat -- | \
         grep -vE '^#' | \
-        awk -F"-" '{
-            PNAME=gensub("([[:graph:]])( )","\\1#","g",$1);
-            print PNAME"-"$2$3$4
-        }' | \
-        sed -E 's/([[:space:]])*([[:alpha:]]-)*([[:alpha:]])([0-9]{3,4})/\1\2\3@\4/'
+        awk -F"[" '
+        function ltrim(s) { sub(/^[ \t\r\n]+/, "", s); return s }
+        function rtrim(s) { sub(/[ \t\r\n]+$/, "", s); return s }
+        function trim(s) { return rtrim(ltrim(s)); }
+        {
+            cmd="echo '\''"trim($1)"'\'' | tr '\'' '\'' '\''#'\''"
+            cmd | getline pname
+            close(cmd)
+            printf("%21s  ",pname);
+            print "["$2$3$4$5$6
+        }'
+
+
+#        | \
+#        sed -E 's/([[:space:]])*([[:alpha:]]-)*([[:alpha:]])([0-9]{3,4})/\1\2\3@\4/'
                                                                      #Note ----^
 }
 
