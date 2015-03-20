@@ -8,9 +8,6 @@ SCRIPTS_DIR=$(dirname $(readlink -f $0))
 # inconvenient for post-processing.
 # Fix by replace ' ' by '#' but only in process name.
 #
-# Note the "note" below. If needed, use another character here, like @, do
-# identify kernel-threads. Alternatively use the lack prev_pid
-# (sched_switch)
 function fix_pname(){
     cat -- | \
         grep -vE '^#' | \
@@ -18,19 +15,31 @@ function fix_pname(){
         function ltrim(s) { sub(/^[ \t\r\n]+/, "", s); return s }
         function rtrim(s) { sub(/[ \t\r\n]+$/, "", s); return s }
         function trim(s) { return rtrim(ltrim(s)); }
-        function rplace(s, r) { sub(/[[:space:]]+/, r, s); return s }
+        function rplace(s, r) { gsub(/[[:space:]]+/, r, s); return s }
+        function _getname(s) { split(s, a, /\(.*\)\(-*\)\([0-9]+\)/); return a[1] }
+        function getpid(s) { n=split(s, a, /-/); return a[n] }
+        function getname(s) {
+            R="";
+            n=split(s, a, /-/);
+            # Concatenate together a string, all but the last split
+            for (i=0; i<n; i++) {
+                R=sprintf("%s%s-",R,a[i]);
+            }
+            # Get rid of surplus leading "-"
+            sub(/^-/, "", R)
+            return R;
+        }
+
         {
-            pname=rplace(trim($1), "#");
-            printf("%21s  ",pname);
-            print "["$2$3$4$5$6
+            rpname=rplace(trim($1), "#");
+            pname=getname(rpname);
+            pid=getpid(rpname);
+            printf("%17s%-5s ",pname,pid);
+            # Print the rest, including the "fake" separator
+            $1=""
+            print "[" substr($0,2)
         }'
-
-
-#        | \
-#        sed -E 's/([[:space:]])*([[:alpha:]]-)*([[:alpha:]])([0-9]{3,4})/\1\2\3@\4/'
-                                                                     #Note ----^
 }
-
 
 if [ "$FIX_PNAME_SH" == $(basename $(readlink -f $0)) ]; then
 #Not sourced, do something with this.
