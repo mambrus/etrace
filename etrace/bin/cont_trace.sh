@@ -1,5 +1,11 @@
 #! /bin/bash
 
+if [ -z $CONT_TRACE_SH ]; then
+CONT_TRACE_SH="cont_trace.sh"
+SCRIPTS_DIR=$(dirname $(readlink -f $0))
+
+source "${SCRIPTS_DIR}/fix_pname.sh"
+
 function maxof() {
     for P in $(ps -Al | \
         grep $1 | \
@@ -15,24 +21,6 @@ function maxof() {
         tac | \
         head -n1 | \
         cut -f1 -d" "
-}
-
-# Some vendors use white-space in their process-names which is extremely
-# inconvenient for post-processing.
-# Fix by replace ' ' by '#' but only in process name.
-#
-# Note the "note" below. If needed, use another character here, like @, do
-# identify kernel-threads. Alternatively use the lack prev_pid
-# (sched_switch)
-function fix_pname(){
-    cat -- | \
-        grep -vE '^#' | \
-        awk -F"-" '{
-            PNAME=gensub("([[:graph:]])( )","\\1#","g",$1);
-            print PNAME"-"$2$3$4
-        }' | \
-        sed -E 's/([[:space:]])*([[:alpha:]]-)*([[:alpha:]])([0-9]{3,4})/\1\2\3@\4/'
-                                                                     #Note ----^
 }
 
 function _mytrace() {
@@ -61,7 +49,7 @@ function _mytrace() {
 #		| fix_pname
 }
 
-function mytrace() {
+function __mytrace() {
 	sudo etrace -p$(maxof $1) -t \
 		-e sched/sched_kthread_stop -f 'common_pid == %tid%' \
 		-e sched/sched_kthread_stop_ret -f 'common_pid == %tid%' \
@@ -82,16 +70,31 @@ function mytrace() {
 #		| fix_pname
 }
 
+function mytrace() {
+	sudo etrace -p$(maxof $1) -t \
+		-e sched/sched_switch -f '(prev_pid == %tid%) || (next_pid == %tid%)' \
+		-verror \
+		-T$2 
+		
+}
+
 function forever_etrace() {
 	for ((;1;)); do
 		mytrace $1 $2
 	done
 }
 
-forever_etrace "${@}"
+if [ "$CHECK_SH" == $(basename $(readlink -f $0)) ]; then
+#Not sourced, do something with this.
+	export PATH=${SCRIPTS_DIR}:$PATH
+
+	forever_etrace "${@}"
+fi
 
 #To unset if sourced:
 # for D in $(cat ../bin/cont_trace.sh | grep function | cut -f2 -d" " | \
 #   sed -e 's/()//');do echo $D; unset $D;
 # done
 
+
+fi
