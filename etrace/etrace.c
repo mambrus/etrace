@@ -46,7 +46,7 @@ struct opts opts = {
 /* *INDENT-OFF* */
     .loglevel       = &log_filter_level,
     .ptime          = DEF_PTIME,
-    .ptime          = DEF_FTRACE_BUFF_SIZE_KB,
+    .ftrace_buffsz  = DEF_FTRACE_BUFF_SIZE_KB,
     .ftrace_clock   = DEF_FTRACE_CLOCK,
     .debugfs_path   = DEF_DEBUGFS_PATH,
     .workdir        = DEF_WORKDIR,
