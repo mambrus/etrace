@@ -69,6 +69,10 @@ static int opts_parse_opt(const char *cmd,
             _req_opt('c')->cnt++;
             strncpy(opts->ftrace_clock, arg, NAME_MAX);
             break;
+        case 's':
+            _req_opt('s')->cnt++;
+            opts->ftrace_buffsz = arg ? atoi(arg) : -1;
+            break;
         case 'v':
             _req_opt('v')->cnt++;
             if (arg[0] >= '0' && arg[0] <= '9')
@@ -170,6 +174,7 @@ static struct option long_options[] = {
     {"verbosity",      required_argument,  0,  'v'},
     {"period",         required_argument,  0,  'T'},
     {"clock",          required_argument,  0,  'c'},
+    {"buffer-size",    required_argument,  0,  's'},
     {"debugfs",        required_argument,  0,  'm'},
     {"workdir",        required_argument,  0,  'w'},
     {"out-file",       required_argument,  0,  'o'},
@@ -195,6 +200,7 @@ static struct req_opt req_opts[] = {
     {'v',  not_req,    at_least,   0},
     {'T',  not_req,    precisely,  0},
     {'c',  not_req,    precisely,  0},
+    {'s',  not_req,    precisely,  0},
     {'m',  not_req,    precisely,  0},
     {'w',  not_req,    precisely,  0},
     {'o',  not_req,    precisely,  0},
@@ -344,7 +350,7 @@ int opts_parse(int argc, char **argv, struct opts *opts)
     while (1) {
         int option_index = 0;
         int c = getopt_long(argc, argv,
-                            "v:T:c:m:p:te:f:i:w:o:zDuhV",
+                            "v:T:c:s:m:p:te:f:i:w:o:zDuhV",
                             long_options,
                             &option_index);
         /* Detect the end of the options. */

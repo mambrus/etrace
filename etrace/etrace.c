@@ -46,6 +46,7 @@ struct opts opts = {
 /* *INDENT-OFF* */
     .loglevel       = &log_filter_level,
     .ptime          = DEF_PTIME,
+    .ptime          = DEF_FTRACE_BUFF_SIZE_KB,
     .ftrace_clock   = DEF_FTRACE_CLOCK,
     .debugfs_path   = DEF_DEBUGFS_PATH,
     .workdir        = DEF_WORKDIR,
@@ -176,6 +177,18 @@ int main(int argc, char **argv)
 
         ASSURE_E(write_by_name
                  (opts.ftrace_clock, "%s/tracing/trace_clock",
+                  opts.debugfs_path), goto err);
+    }
+
+    /* Set the ftrace buffer size, but only if it has actually been given on
+     * command-line */
+    if (req_opt('s', opts.req_opts)->cnt > 0) {
+        char buff[10];
+        snprintf(buff, 10, "%d", opts.ftrace_buffsz);
+        LOGD("Setting new ftrace buffer size to %s kB\n", buff);
+
+        ASSURE_E(write_by_name
+                 (buff, "%s/tracing/buffer_size_kb",
                   opts.debugfs_path), goto err);
     }
 

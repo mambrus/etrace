@@ -24,6 +24,11 @@ set(DEF_FTRACE_CLOCK
 	CACHE STRING
 	"ftrace_clock to use. Note: Valid ones depend on target.")
 
+set(DEF_FTRACE_BUFF_SIZE_KB
+	"10000"
+	CACHE STRING
+	"Size of each CPU trace buffer in kB.")
+
 #SET(BUILD_PARAVIEW_PLUGIN ON CACHE STRING "Build Paraview plugin?" FORCE)
 set(SYSROOT
 	${CMAKE_SYSROOT}
