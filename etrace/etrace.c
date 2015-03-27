@@ -111,9 +111,6 @@ void etrace_exit(int status)
 int main(int argc, char **argv)
 {
     int rc, cnt;
-    char *tfname;
-
-    tfname = malloc(PATH_MAX);
 
     LOGI("etrace version v%s \n", VERSION);
 
@@ -136,30 +133,32 @@ int main(int argc, char **argv)
     etrace.pid = opts.pid;
     assert_np(time_now(&etrace.stime));
 
-    if (strlen(opts.outfname)) {
+    if (strlen(opts.outfname) == 0) {
         /* Out to file, but deduct the filename */
 
         sprintf(etrace.outfname, "%d_%06d_%06d_%d.etrace", etrace.opts->rid,
                 (int)etrace.stime.tv_sec, (int)etrace.stime.tv_usec,
                 etrace.opts->pid);
-        snprintf(tfname, PATH_MAX, "%s/%s", opts.workdir, etrace.outfname);
+        snprintf(etrace.outfname, PATH_MAX, "%s/%s", opts.workdir,
+                 etrace.outfname);
     } else {
-        if (!(strcmp(opts.outfname, "-"))) {
+        if (strcmp(opts.outfname, "-") != 0) {
             if (opts.outfname[0] == '/') {
                 strncpy(etrace.outfname, opts.outfname, PATH_MAX);
             } else {
-                snprintf(tfname, PATH_MAX, "%s/%s", opts.workdir,
-                         etrace.outfname);
+                snprintf(etrace.outfname, PATH_MAX, "%s/%s", opts.workdir,
+                         opts.outfname);
             }
         }
     }
-    if ((strlen(etrace.outfname) == 0) && (!(strcmp(etrace.outfname, "-")))) {
-        LOGD("Out-file name: %s\n", tfname);
-        ASSURE_E((etrace.out_fd = open(tfname, O_WRONLY)) != -1, goto open_err);
+    if (strlen(etrace.outfname) != 0) {
+        LOGI("Out-file name: %s\n", etrace.outfname);
+        ASSURE_E((etrace.out_fd =
+                  open(etrace.outfname, O_WRONLY | O_TRUNC | O_CREAT)) != -1,
+                 goto open_err);
     } else {
-        LOGD("Writing output to stdout\n");
+        LOGI("Writing output to stdout\n");
     }
-    free(tfname);
 
     snprintf(etrace.tracefs_path, PATH_MAX, "%s/tracing", opts.debugfs_path);
 
@@ -203,7 +202,7 @@ int main(int argc, char **argv)
                   fopen("/sys/kernel/debug/tracing/trace", "w")) != NULL,
                  goto err);
 
-        fprintf(f, "");
+        fprintf(f, "0");
         fflush(f);
         fclose(f);
     }
