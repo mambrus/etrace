@@ -268,6 +268,31 @@ int main(int argc, char **argv)
     LOGI("Tracing starts\n");
     ASSURE_E(write_by_name("1", "%s/tracing_on", etrace.tracefs_path),
              goto err);
+
+#define TRUE 1
+#if TRUE
+
+#include <stdio.h>
+
+    char line_buff[1024];
+    FILE *fout,*fin;
+    char tofname[PATH_MAX];
+
+    ASSURE_E( (fout = fdopen(etrace.out_fd,"w")) != NULL, goto open_err);
+    snprintf(tofname, PATH_MAX, "%s/trace_pipe", etrace.tracefs_path);
+    LOGD("Accessing file: %s\n", tofname);
+    //fin = fopen(tofname, O_RDONLY);
+    //ASSURE_E(fin != NULL, goto open_err);
+    ASSURE_E((fin = fopen(tofname, "r")) != NULL, goto open_err);
+
+    while (1) {
+        ASSURE_E(fgets(line_buff, 1024, fin) != NULL, goto io_err);
+        ASSURE_E(fputs(line_buff, fout) > 0 , goto io_err);
+    }
+
+#else
+#error
+
 //    usleep(opts.ptime);
 //    LOGI("Tracing stops\n");
 //    ASSURE_E(write_by_name("0", "%s/tracing_on", etrace.tracefs_path),
@@ -310,6 +335,7 @@ int main(int argc, char **argv)
         //usleep(opts.ptime / 1000);
     }
 //#endif //NEVER
+#endif
 
     etrace_exit(0);
 
