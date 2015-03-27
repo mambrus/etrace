@@ -173,7 +173,7 @@ int main(int argc, char **argv)
     /* Set the ftrace-clock, but only if it has actually been given on
      * command-line */
     if (req_opt('c', opts.req_opts)->cnt > 0) {
-        LOGD("Setting new ftrace clock to: %s\n", opts.ftrace_clock);
+        LOGI("Setting new ftrace clock to: %s\n", opts.ftrace_clock);
 
         ASSURE_E(write_by_name
                  (opts.ftrace_clock, "%s/tracing/trace_clock",
@@ -185,7 +185,7 @@ int main(int argc, char **argv)
     if (req_opt('s', opts.req_opts)->cnt > 0) {
         char buff[10];
         snprintf(buff, 10, "%d", opts.ftrace_buffsz);
-        LOGD("Setting new ftrace buffer size to %s kB\n", buff);
+        LOGI("Setting new ftrace buffer size to: %s kB\n", buff);
 
         ASSURE_E(write_by_name
                  (buff, "%s/tracing/buffer_size_kb",
@@ -204,6 +204,8 @@ int main(int argc, char **argv)
                  goto err);
 
         fprintf(f, "");
+        fflush(f);
+        fclose(f);
     }
 
     /* Diagnostic print-out of events */
