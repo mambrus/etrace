@@ -52,11 +52,19 @@
 #define xstr(S) str(S)
 #define str(S) #S
 
+/* opt validator, one per opt */
+struct req_opt {
+    int val;                    /* Flag value (option letter) */
+    int req;                    /* Times required to be seen at least */
+    int max;                    /* Seen no more than */
+    int cnt;                    /* Seen number of times */
+};
+
 /* General opts */
 struct opts {
     log_level *loglevel;        /* Verbosity level */
     unsigned ptime;             /* Time to harvest in uS */
-    char ftrace_clock[NAME_MAX];    /* Path to where Linux debugfs is mounted */
+    char ftrace_clock[NAME_MAX];    /* name of ftrace_clock to use */
     char debugfs_path[PATH_MAX];    /* Path to where Linux debugfs is mounted */
     char workdir[PATH_MAX];     /* Output directory */
     char outfname[PATH_MAX];    /* Output filename (optional, normally automatic) */
@@ -64,11 +72,16 @@ struct opts {
     int threads;                /* True if threads too */
     unsigned rid;               /* Run ID */
     int daemon;                 /* If to become a daemon or not */
+
+    struct req_opt *req_opts;   /* Deep copy of the req_opts list. Can be used to
+                                   extend logic. */
 };
 
 #include <stdio.h>
+void opts_init();
 void opts_help(FILE *file, int flags);
 int opts_parse(int argc, char **argv, struct opts *);
-int opts_check(const struct opts *);
+int opts_check(struct opts *);
+struct req_opt *req_opt(int val, struct req_opt *rop);
 
 #endif                          //opts_h

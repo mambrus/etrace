@@ -60,6 +60,7 @@ void opts_help(FILE *file, int flags)
                 "Generic options:\n"
                 "  -D, --documentation        Output full documentation, then exit\n"
                 "  -c, --clock=name           Which ftrace_clock to use for time-stamping\n"
+                "                             Set if option seen, else not touched\n"
                 "                             Note that valid names depend on system. ("
                 xstr(DEF_FTRACE_CLOCK) ")\n"
                 "  -T, --period=time          Harvest-time (uS). ("

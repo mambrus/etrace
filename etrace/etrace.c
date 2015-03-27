@@ -60,7 +60,7 @@ struct etrace etrace = {
 /* *INDENT-OFF* */
     .opts           = &opts,
     .pid            = -1,
-    .out_fd         = 1  
+    .out_fd         = 1
 /* *INDENT-ON* */
 };
 
@@ -102,6 +102,7 @@ void etrace_exit(int status)
 
     assert_ext(mlist_close(etrace.event_list) == 0);
     assert_ext(mlist_close(etrace.pid_trigger_list) == 0);
+    free(opts.req_opts);
 
     exit(status);
 }
@@ -123,6 +124,7 @@ int main(int argc, char **argv)
                                  &etrace.pid_trigger_list)
                ) == 0);
 
+    opts_init();
     memset(opts.outfname, 0, PATH_MAX);
     memset(etrace.outfname, 0, PATH_MAX);
     ASSURE_E((rc = opts_parse(argc, argv, &opts)) > 0, goto err);
@@ -167,13 +169,21 @@ int main(int argc, char **argv)
     ASSURE_E(write_by_name("nop", "%s/current_tracer", etrace.tracefs_path),
              goto err);
 
-    /* Set the ftrace-clock */
-    ASSURE_E(write_by_name
-             (opts.ftrace_clock, "%s/tracing/trace_clock", opts.debugfs_path),
-             goto err);
+    /* Set the ftrace-clock, but only if it has actually been given on
+     * command-line */
+    if (req_opt('c', opts.req_opts)->cnt > 0) {
+        LOGD("Setting new ftrace clock to: %s\n", opts.ftrace_clock);
+
+        ASSURE_E(write_by_name
+                 (opts.ftrace_clock, "%s/tracing/trace_clock",
+                  opts.debugfs_path), goto err);
+    }
 
     /* Clear trace buffer */
+    /* Low level I/O doesn't work, why? Find out (TBD) */
     //ASSURE_E(write_by_name("0", "%s/trace", etrace.tracefs_path), goto err);
+
+    /*Use high level form as work-around */
     {
         FILE *f;
         ASSURE_E((f =

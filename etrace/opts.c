@@ -47,13 +47,7 @@
 
 static int uq_eid = 0;
 
-struct req_opt {
-    int val;                    /* Flag value (option letter) */
-    int req;                    /* Times required to be seen at least */
-    int max;                    /* Seen no more than */
-    int cnt;                    /* Seen number of times */
-};
-struct req_opt *req_opt(int val);
+static struct req_opt *_req_opt(int val);
 
 extern struct etrace etrace;
 
@@ -68,15 +62,15 @@ static int opts_parse_opt(const char *cmd,
 
     switch (key) {
         case 'T':
-            req_opt('T')->cnt++;
+            _req_opt('T')->cnt++;
             opts->ptime = arg ? atoi(arg) : -1;
             break;
         case 'c':
-            req_opt('c')->cnt++;
+            _req_opt('c')->cnt++;
             strncpy(opts->ftrace_clock, arg, NAME_MAX);
             break;
         case 'v':
-            req_opt('v')->cnt++;
+            _req_opt('v')->cnt++;
             if (arg[0] >= '0' && arg[0] <= '9')
                 *opts->loglevel = arg ? atoi(arg) : 0;
             else {
@@ -88,37 +82,37 @@ static int opts_parse_opt(const char *cmd,
             }
             break;
         case 'z':
-            req_opt('z')->cnt++;
+            _req_opt('z')->cnt++;
             opts->daemon = 1;
             break;
         case 'm':
-            req_opt('m')->cnt++;
+            _req_opt('m')->cnt++;
             strncpy(opts->debugfs_path, arg, PATH_MAX);
             break;
         case 'w':
-            req_opt('w')->cnt++;
+            _req_opt('w')->cnt++;
             strncpy(opts->workdir, arg, PATH_MAX);
             break;
         case 'o':
-            req_opt('o')->cnt++;
+            _req_opt('o')->cnt++;
             strncpy(opts->outfname, arg, PATH_MAX);
             break;
         case 'p':
-            req_opt('p')->cnt++;
+            _req_opt('p')->cnt++;
             opts->pid = arg ? atoi(arg) : 0;
             break;
         case 't':
-            req_opt('t')->cnt++;
+            _req_opt('t')->cnt++;
             opts->threads = 1;
             break;
         case 'e':
-            req_opt('e')->cnt++;
+            _req_opt('e')->cnt++;
             strncpy(event.name, arg, PATH_MAX);
             event.id = uq_eid++;
             assert_np(mlist_add_last(etrace.event_list, &event));
             break;
         case 'f':
-            req_opt('f')->cnt++;
+            _req_opt('f')->cnt++;
             assert_np(event_node = mdata_curr(etrace.event_list));
             if (event_node->filter
                 && strnlen(event_node->filter, FILTER_MAX) > 0) {
@@ -133,19 +127,19 @@ static int opts_parse_opt(const char *cmd,
             event_node->filter = strndup(arg, FILTER_MAX);
             break;
         case 'i':
-            req_opt('i')->cnt++;
+            _req_opt('i')->cnt++;
             opts->rid = arg ? atoi(arg) : 0;
             break;
         case 'u':
-            req_opt('u')->cnt++;
+            _req_opt('u')->cnt++;
             opts_help(stdout, HELP_USAGE | HELP_EXIT);
             break;
         case 'h':
-            req_opt('h')->cnt++;
+            _req_opt('h')->cnt++;
             opts_help(stdout, HELP_LONG | HELP_EXIT);
             break;
         case 'D':
-            req_opt('D')->cnt++;
+            _req_opt('D')->cnt++;
             doc_print();
             etrace_exit(0);
             break;
@@ -160,7 +154,7 @@ static int opts_parse_opt(const char *cmd,
             opts_help(stderr, HELP_TRY | HELP_EXIT_ERR);
             break;
         case 'V':
-            req_opt('V')->cnt++;
+            _req_opt('V')->cnt++;
             opts_help(stdout, HELP_VERSION | HELP_EXIT);
             break;
         default:
@@ -218,10 +212,22 @@ static struct req_opt req_opts[] = {
 /* *INDENT-ON* */
 };
 
-struct req_opt *req_opt(int val)
+/* Access by key to the table above */
+struct req_opt *_req_opt(int val)
 {
     struct req_opt *rop = req_opts;
 
+    for (rop = req_opts; rop->val != 0; rop++) {
+        if (rop->val == val)
+            return rop;
+    }
+    assert("req_opt reached sentinel" == 0);
+    return rop;
+}
+
+/* Access by key to a req_opt-list, generalized form */
+struct req_opt *req_opt(int val, struct req_opt *rop)
+{
     for (rop = req_opts; rop->val != 0; rop++) {
         if (rop->val == val)
             return rop;
@@ -260,7 +266,20 @@ static int become_daemon()
     return 0;
 }
 
-int opts_check(const struct opts *opts)
+/*Initializes (resets) whatever is state-dependent here */
+void opts_init()
+{
+    struct req_opt *rop = req_opts;
+    struct option *op = long_options;
+
+    for (rop = req_opts, op = long_options; op->name != NULL; rop++, op++) {
+        rop->cnt = 0;
+    }
+}
+
+/* Checks options to fulfill extended criteria. If successful appends a
+ * deep-copy of the validation-structure. */
+int opts_check(struct opts *opts)
 {
     int resok = OPT_OK;
     struct option *op = long_options;
@@ -296,6 +315,17 @@ int opts_check(const struct opts *opts)
                  op->name, op->val, rop->cnt, rop->req, rop->max);
             resok = E_OPT_REQ;
         }
+    }
+
+    /* If all passed OK, make a deep-copy of check-struct  and attach it to
+     * the opts-struct */
+    {
+        void *p;
+
+        opts->req_opts =
+            ((p =
+              malloc(sizeof(req_opts))) ? memcpy(p, &req_opts,
+                                                 sizeof(req_opts)) : NULL);
     }
 
     return resok;
