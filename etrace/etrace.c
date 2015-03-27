@@ -297,6 +297,7 @@ int main(int argc, char **argv)
             rc = read(fd_in, cpy_buf, CPY_MAX);
             if (rc > 0) {
                 rc = write(etrace.out_fd, cpy_buf, rc);
+                fsync(etrace.out_fd);
             } else {
                 if (rc == EAGAIN || rc == EINTR) {
                     LOGW("EAGAIN or rc==EINTR happened. Restarting read.\n");
@@ -306,7 +307,7 @@ int main(int argc, char **argv)
                 }
             }
         }
-        usleep(opts.ptime);
+        //usleep(opts.ptime / 1000);
     }
 //#endif //NEVER
 
