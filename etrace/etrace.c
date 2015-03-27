@@ -46,6 +46,7 @@ struct opts opts = {
 /* *INDENT-OFF* */
     .loglevel       = &log_filter_level,
     .ptime          = DEF_PTIME,
+    .ftrace_clock   = DEF_FTRACE_CLOCK,
     .debugfs_path   = DEF_DEBUGFS_PATH,
     .workdir        = DEF_WORKDIR,
     .threads        = 0,
@@ -165,6 +166,12 @@ int main(int argc, char **argv)
     /* Make sure nop is really chosen */
     ASSURE_E(write_by_name("nop", "%s/current_tracer", etrace.tracefs_path),
              goto err);
+
+    /* Set the ftrace-clock */
+    ASSURE_E(write_by_name
+             (opts.ftrace_clock, "%s/tracing/trace_clock", opts.debugfs_path),
+             goto err);
+
     /* Clear trace buffer */
     //ASSURE_E(write_by_name("0", "%s/trace", etrace.tracefs_path), goto err);
     {
@@ -242,18 +249,18 @@ int main(int argc, char **argv)
 //    ASSURE_E(write_by_name("0", "%s/tracing_on", etrace.tracefs_path),
 //             goto err);
 
-int fd_in;
-char tofname[PATH_MAX];
-snprintf(tofname, PATH_MAX, "%s/trace_pipe", etrace.tracefs_path);
-LOGD("Accessing file: %s\n", tofname);
-ASSURE_E((fd_in = open(tofname, O_RDONLY)) != -1, goto open_err);
+    int fd_in;
+    char tofname[PATH_MAX];
+    snprintf(tofname, PATH_MAX, "%s/trace_pipe", etrace.tracefs_path);
+    LOGD("Accessing file: %s\n", tofname);
+    ASSURE_E((fd_in = open(tofname, O_RDONLY)) != -1, goto open_err);
 
 //#ifdef NEVER
-    while(1){
+    while (1) {
         /* Copy trace buffer to output */
         char cpy_buf[CPY_MAX];
         //char tofname[PATH_MAX];
-        int /*fd_in,*/ rc, done = 0;
+        int /*fd_in, */ rc, done = 0;
 
 #ifdef NEVER
         snprintf(tofname, PATH_MAX, "%s/trace", etrace.tracefs_path);

@@ -56,6 +56,7 @@
 struct opts {
     log_level *loglevel;        /* Verbosity level */
     unsigned ptime;             /* Time to harvest in uS */
+    char ftrace_clock[NAME_MAX];    /* Path to where Linux debugfs is mounted */
     char debugfs_path[PATH_MAX];    /* Path to where Linux debugfs is mounted */
     char workdir[PATH_MAX];     /* Output directory */
     char outfname[PATH_MAX];    /* Output filename (optional, normally automatic) */

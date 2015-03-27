@@ -73,14 +73,18 @@ function __mytrace() {
 function mytrace() {
 	sudo etrace -p$(maxof $1) -t \
 		-e sched/sched_switch -f '(prev_pid == %tid%) || (next_pid == %tid%)' \
+		-e sched/sched_wakeup -f '(pid == %tid%)' \
 		-verror \
+		-c$3 \
 		-T$2 
 		
 }
 
 function forever_etrace() {
+	CLOCK=${1-"local"}
+
 	for ((;1;)); do
-		mytrace $1 $2
+		mytrace $1 $2 $CLOCK
 	done
 }
 

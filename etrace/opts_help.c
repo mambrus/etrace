@@ -39,6 +39,7 @@ void opts_help(FILE *file, int flags)
         fprintf(file, "%s",
                 "Usage: etrace [-DzhutV]\n"
                 "            [-T time] [--period=time]\n"
+                "            [-c name] [--clock=name] \n"
                 "            [-v level] [--verbosity=level] \n"
                 "            [-m path] [--debugfs=path] \n"
                 "            [-w path] [--workdir=path] \n"
@@ -58,6 +59,9 @@ void opts_help(FILE *file, int flags)
                 "\n"
                 "Generic options:\n"
                 "  -D, --documentation        Output full documentation, then exit\n"
+                "  -c, --clock=name           Which ftrace_clock to use for time-stamping\n"
+                "                             Note that valid names depend on system. ("
+                xstr(DEF_FTRACE_CLOCK) ")\n"
                 "  -T, --period=time          Harvest-time (uS). ("
                 xstr(DEF_PTIME) ")\n"
                 "  -m, --debugfs=path         Debugfs mount-point path ("

@@ -19,6 +19,11 @@ set(DEF_PTIME
 	CACHE STRING
 	"Default harvest time (uS)")
 
+set(DEF_FTRACE_CLOCK
+	"local"
+	CACHE STRING
+	"ftrace_clock to use. Note: Valid ones depend on target.")
+
 #SET(BUILD_PARAVIEW_PLUGIN ON CACHE STRING "Build Paraview plugin?" FORCE)
 set(SYSROOT
 	${CMAKE_SYSROOT}
