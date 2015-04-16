@@ -49,6 +49,7 @@ struct efilter {
  */
 struct pid_trigger {
     pid_t pid;
+    int isleader;               /* Is root-thread/root-process? */
     handle_t efilter_list;
 };
 

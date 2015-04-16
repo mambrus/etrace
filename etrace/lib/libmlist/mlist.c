@@ -234,15 +234,6 @@ struct node *mlist_head(const handle_t handle)
     return L->p = L->phead;
 };
 
-LDATA *mdata_first(const handle_t handle)
-{
-    assert_ext(mlistmod_data.isinit);
-    assert_ext(handle && "invalid or not initialized");
-
-    struct listheader *L = (struct listheader *)handle;
-    return L->p = L->phead;
-};
-
 struct node *mlist_tail(const handle_t handle)
 {
     assert_ext(mlistmod_data.isinit);

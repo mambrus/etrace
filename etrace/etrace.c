@@ -224,7 +224,7 @@ int main(int argc, char **argv)
 
     LOGD("Adding root-PID to list: %d\n", etrace.opts->pid);
     ASSURE_E(mlist_add_last(etrace.pid_trigger_list, &(struct pid_trigger) {
-                            etrace.opts->pid}), goto err);
+                            .pid = etrace.opts->pid,.isleader = 1}), goto err);
     if (opts.threads) {
         ASSURE_E(proc_tid_tolist
                  (etrace.opts->pid, etrace.pid_trigger_list), goto err);
@@ -233,7 +233,7 @@ int main(int argc, char **argv)
     ASSURE_E(proc_expand_events(etrace.pid_trigger_list, etrace.event_list),
              goto err);
 
-    ASSURE_E(proc_pheader(&etrace), goto err);
+    ASSURE_E(proc_print_header(&etrace), goto err);
 
     /* Diagnostic print-out of pid_triggers */
     LOGD("List of pid_triggers {#n PID,name,filter}:\n");
@@ -275,10 +275,10 @@ int main(int argc, char **argv)
 #include <stdio.h>
 
     char line_buff[1024];
-    FILE *fout,*fin;
+    FILE *fout, *fin;
     char tofname[PATH_MAX];
 
-    ASSURE_E( (fout = fdopen(etrace.out_fd,"w")) != NULL, goto open_err);
+    ASSURE_E((fout = fdopen(etrace.out_fd, "w")) != NULL, goto open_err);
     snprintf(tofname, PATH_MAX, "%s/trace_pipe", etrace.tracefs_path);
     LOGD("Accessing file: %s\n", tofname);
     //fin = fopen(tofname, O_RDONLY);
@@ -287,7 +287,7 @@ int main(int argc, char **argv)
 
     while (1) {
         ASSURE_E(fgets(line_buff, 1024, fin) != NULL, goto io_err);
-        ASSURE_E(fputs(line_buff, fout) > 0 , goto io_err);
+        ASSURE_E(fputs(line_buff, fout) > 0, goto io_err);
     }
 
 #else

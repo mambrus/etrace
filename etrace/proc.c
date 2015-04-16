@@ -44,7 +44,7 @@
 #define MAX_DGTS 16             /*Max number of digits in a PID */
 #define MARK_POS 1              /*Marker position of where etrace internal data stops */
 
-static inline int expand_each_event(pid_t, handle_t, handle_t);
+static inline int expand_each_event(pid_t, int, handle_t, handle_t);
 static inline int rreplace(char *buf, int size, regex_t *re, char *rp);
 
 extern struct etrace etrace;
@@ -102,15 +102,17 @@ int proc_expand_events(handle_t pid_trigger_list, handle_t event_list)
 
         assert(n->pl);
         pt = mdata_curr(pid_trigger_list);
-        LOGD("PID #%d in progress\n", pt->pid);
+        LOGD("Events expansion for PID #%d in progress\n", pt->pid);
         assert_np((rc =
                    mlist_opencreate(sizeof(struct efilter), NULL,
                                     &pt->efilter_list)) == 0);
-        ASSURE_E(expand_each_event(pt->pid, pt->efilter_list, event_list),
+        ASSURE_E(expand_each_event
+                 (pt->pid, pt->isleader, pt->efilter_list, event_list),
                  goto err);
     }
 
-    LOGI("Build-up of %d interpreted event-filters one for each PID", cnt);
+    LOGI("Build-up done for [%d] interpreted event-filters "
+         "one for each PID\n", cnt);
 
     return 1;
 err:
@@ -146,8 +148,10 @@ int proc_concat_epieces(handle_t event_list, handle_t pid_trigger_list)
 
             struct efilter *ef = mdata_curr(pd->efilter_list);
             int ti = ef->event->id;
-            i_table[ti] +=
-                sprintf(&(s_table[ti])[i_table[ti]], "( %s ) || ", ef->efilter);
+            if (strlen(ef->efilter) > 0)
+                i_table[ti] +=
+                    sprintf(&(s_table[ti])[i_table[ti]], "( %s ) || ",
+                            ef->efilter);
             LOGV("  #%d %d,%s,%s\n", cnt, pd->pid, ef->event->name,
                  s_table[ti]);
 
@@ -185,9 +189,12 @@ int proc_ftrace_arm(handle_t event_list)
         ASSURE_E(write_by_name
                  ("0", "%s/events/%s/enable", etrace.tracefs_path, ev->name),
                  goto err);
-        ASSURE_E(write_by_name
-                 (ev->filter, "%s/events/%s/filter", etrace.tracefs_path,
-                  ev->name), goto err);
+
+        if (strnlen(ev->filter, FILTER_MAX)) {
+            ASSURE_E(write_by_name
+                     (ev->filter, "%s/events/%s/filter", etrace.tracefs_path,
+                      ev->name), goto err);
+        }
         ASSURE_E(write_by_name
                  ("1", "%s/events/%s/enable", etrace.tracefs_path, ev->name),
                  goto err);
@@ -220,7 +227,7 @@ static inline int pline(int fd, char c, int len, char *marker)
     return 1;
 }
 
-int proc_pheader(struct etrace *etrace)
+int proc_print_header(struct etrace *etrace)
 {
     char buff[1024];
     int i;
@@ -373,8 +380,8 @@ buf_oflow:
     return -1;
 }
 
-static inline int expand_each_event(pid_t pid, handle_t efilter_list,
-                                    handle_t event_list)
+static inline int expand_each_event(pid_t pid, int isleader,
+                                    handle_t efilter_list, handle_t event_list)
 {
     regex_t re;
     char numbuf[MAX_DGTS];
@@ -388,13 +395,35 @@ static inline int expand_each_event(pid_t pid, handle_t efilter_list,
 
         assert(e);
         ef.event = e;
-        strncpy(ef.efilter, e->filter, FILTER_MAX);
-        EXCEPTION_E(rreplace(ef.efilter, FILTER_MAX, &re, numbuf), goto err_rr);
-        LOGD("  Filter [%s]: [%s]->[%s]\n", ef.event->name,
-             ef.event->filter, ef.efilter);
-
-        ASSURE_E(mlist_add_last(efilter_list, &ef), goto err_list);
-
+        memset(ef.efilter, 0, FILTER_MAX);
+        if (e->filter) {
+            if (strstr(e->filter, TID_REGEXP)) {
+                strncpy(ef.efilter, e->filter, FILTER_MAX);
+                EXCEPTION_E(rreplace(ef.efilter, FILTER_MAX, &re, numbuf),
+                            goto err_rr);
+                LOGD("  Ev/flt->exp: [%s]/[%s]->[%s]\n", ef.event->name,
+                     ef.event->filter, ef.efilter);
+                ASSURE_E(mlist_add_last(efilter_list, &ef), goto err_list);
+            } else if (isleader) {
+                /* No TID:s to expand. Add only one filter,
+                   let it "belong" to the pid-leader */
+                strncpy(ef.efilter, e->filter, FILTER_MAX);
+                LOGD("  Ev/flt->exp: [%s]/[%s]->[%s]\n", ef.event->name,
+                     ef.event->filter, ef.efilter);
+                ASSURE_E(mlist_add_last(efilter_list, &ef), goto err_list);
+            } else {
+                LOGD("  Ev/flt->exp: [%s] (skipped)\n", ef.event->name);
+            }
+        } else {
+            if (isleader) {
+                LOGD("  Ev/flt->exp: [%s]/[NO FILTER]->[NO FILTER]\n",
+                     ef.event->name);
+                ASSURE_E(mlist_add_last(efilter_list, &ef), goto err_list);
+            } else {
+                LOGD("  Ev/flt->exp: [%s]/[NO FILTER]->[NO FILTER] (skipped)\n",
+                     ef.event->name);
+            }
+        }
     }
 
     regfree(&re);
