@@ -29,9 +29,10 @@ source "${SCRIPTS_DIR}/fix_pname.sh"
 function to_sampler(){
     local IN=$1
     local THREADS="${2}"
+    local MAX_CPUS=16
 
     cat $IN | fix_pname | \
-    awk -vTHREADS="${THREADS}" '
+    awk -vTHREADS="${THREADS}" -vMAX_CPUS="${MAX_CPUS}" '
 		# Trims ":"
         function rtrim_1(s) { sub(/[:]+$/, "", s); return s }
         function ltrim_1(s) { sub(/^[:]+/, "", s); return s }
@@ -40,8 +41,8 @@ function to_sampler(){
         function rtrim_2(s) { sub(/[\[\]]+$/, "", s); return s }
         function ltrim_2(s) { sub(/^[\[\]]+/, "", s); return s }
 
-		# In a line with assignments (i.e. "par=val"), return the nth
-		# assignment
+		# In a line (arg 1) with assignments (i.e. "par=val"), return the nth
+		# assignment (arg 2)
 		function get_nth_value(s, m) {
 			split(s, a1, /=/);
 			split(a1[m+1], a2, / /);
@@ -65,7 +66,20 @@ function to_sampler(){
 
 		BEGIN{
 			NPIDS=split(THREADS, THREADA, /[,; ]/);
+            # Initialize last seen CPU_freq
+            for (i=0; i<MAX_CPUS; i++) {
+                FCPU[i+1]=-1;
+            }
 		}
+
+        rtrim_1($5)=="cpu_frequency"{
+			cpu=get_nth_value($0,2);
+			cpu_freq=get_nth_value($0,1);
+
+            FCPU[cpu+1]=cpu_freq
+            # print cpu" "cpu_freq
+            # print FCPU[cpu]
+        }
 
         rtrim_1($5)=="sched_switch"{
 			TIME=rtrim_1($4);
@@ -78,7 +92,7 @@ function to_sampler(){
 			FROM_OURS=is_in(PPID, THREADA);
 			TO_OURS=is_in(NPID, THREADA);
 
-            printf("%s;%s;%d;%s;%s;%d;%d;%s;%s\n",
+            printf("%s;%s;%d;%s;%s;%d;%d;%s;%s;%d\n",
 				TIME,
 				DBG,
 				CPU,
@@ -87,7 +101,8 @@ function to_sampler(){
 				FROM_OURS,
 				TO_OURS,
 				PPID,
-				NPID);
+				NPID,
+                FCPU[CPU+1]);
         }'
 }
 
