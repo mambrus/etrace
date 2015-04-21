@@ -42,18 +42,15 @@ option(ENABLE_LOGGING
 option(ENABLE_SYSLOG
     "Enable log to syslog (Linux/OSX)" OFF)
 ################################################################################
-
 if (NOT SYSROOT STREQUAL "")
 	message( "** INFO: SYSROOT was either set or defaulted from toolchain file" )
 	set(CMAKE_SYSROOT "${SYSROOT}")
-	set(CFLAGS_SYSROOT "--sysroot=${CMAKE_SYSROOT}")
+	set(CMAKE_EXTRA_C_FLAGS "${CMAKE_EXTRA_C_FLAGS} --sysroot=${CMAKE_SYSROOT}")
 endif (NOT SYSROOT STREQUAL "")
 
-set(CFLAGS_SYSROOT "--sysroot=${CMAKE_SYSROOT}")
-
-set(CMAKE_C_FLAGS "${CFLAGS_SYSROOT} -no-integrated-cpp -Wno-unused-function -g3 -ggdb3 -O0 -Wall")
-set(CMAKE_C_FLAGS_DEBUG "${CFLAGS_SYSROOT} -no-integrated-cpp -Wno-unused-function -g3 -ggdb3 -O0 -Wall")
-set(CMAKE_C_FLAGS_RELEASE "${CFLAGS_SYSROOT} -no-integrated-cpp -Wno-unused-function -g3 -ggdb3 -O0 -Wall")
+set(CMAKE_C_FLAGS "${CMAKE_EXTRA_C_FLAGS} -no-integrated-cpp -Wno-unused-function -g3 -ggdb3 -O0 -Wall")
+set(CMAKE_C_FLAGS_DEBUG "${CMAKE_EXTRA_C_FLAGS} -no-integrated-cpp -Wno-unused-function -g3 -ggdb3 -O0 -Wall")
+set(CMAKE_C_FLAGS_RELEASE "${CMAKE_EXTRA_C_FLAGS} -no-integrated-cpp -Wno-unused-function -g3 -ggdb3 -O0 -Wall")
 
 
 ################################################################################
