@@ -13,5 +13,8 @@ set(LIBTIME_SOURCE
 )
 
 add_library(libmtime ${LIBTIME_SOURCE})
-#target_link_libraries(libmtime rt)
-target_link_libraries(libmtime)
+if (ANDROID_TARGET)
+    target_link_libraries(libmtime)
+else (ANDROID_TARGET)
+    target_link_libraries(libmtime rt)
+endif (ANDROID_TARGET)

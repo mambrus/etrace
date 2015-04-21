@@ -275,19 +275,28 @@ int main(int argc, char **argv)
 #include <stdio.h>
 
     char line_buff[1024];
-    FILE *fout, *fin;
-    char tofname[PATH_MAX];
+    FILE *fout = NULL, *fin;
+    char tmp_fname[PATH_MAX];
 
+#ifndef __ANDROID__
     ASSURE_E((fout = fdopen(etrace.out_fd, "w")) != NULL, goto open_err);
-    snprintf(tofname, PATH_MAX, "%s/trace_pipe", etrace.tracefs_path);
-    LOGD("Accessing file: %s\n", tofname);
-    //fin = fopen(tofname, O_RDONLY);
+#else
+    if (etrace.out_fd != 1)
+        ASSURE_E((fout = fdopen(etrace.out_fd, "w")) != NULL, goto open_err);
+#endif
+    snprintf(tmp_fname, PATH_MAX, "%s/trace_pipe", etrace.tracefs_path);
+    LOGD("Accessing file: %s\n", tmp_fname);
+    //fin = fopen(tmp_fname, O_RDONLY);
     //ASSURE_E(fin != NULL, goto open_err);
-    ASSURE_E((fin = fopen(tofname, "r")) != NULL, goto open_err);
+    ASSURE_E((fin = fopen(tmp_fname, "r")) != NULL, goto open_err);
 
     while (1) {
         ASSURE_E(fgets(line_buff, 1024, fin) != NULL, goto io_err);
+#ifdef __ANDROID__
+        ASSURE_E(puts(line_buff) > 0, goto io_err);
+#else
         ASSURE_E(fputs(line_buff, fout) > 0, goto io_err);
+#endif
     }
 
 #else
@@ -299,22 +308,22 @@ int main(int argc, char **argv)
 //             goto err);
 
     int fd_in;
-    char tofname[PATH_MAX];
-    snprintf(tofname, PATH_MAX, "%s/trace_pipe", etrace.tracefs_path);
-    LOGD("Accessing file: %s\n", tofname);
-    ASSURE_E((fd_in = open(tofname, O_RDONLY)) != -1, goto open_err);
+    char tmp_fname[PATH_MAX];
+    snprintf(tmp_fname, PATH_MAX, "%s/trace_pipe", etrace.tracefs_path);
+    LOGD("Accessing file: %s\n", tmp_fname);
+    ASSURE_E((fd_in = open(tmp_fname, O_RDONLY)) != -1, goto open_err);
 
 //#ifdef NEVER
     while (1) {
         /* Copy trace buffer to output */
         char cpy_buf[CPY_MAX];
-        //char tofname[PATH_MAX];
+        //char tmp_fname[PATH_MAX];
         int /*fd_in, */ rc, done = 0;
 
 #ifdef NEVER
-        snprintf(tofname, PATH_MAX, "%s/trace", etrace.tracefs_path);
-        LOGD("Accessing file: %s\n", tofname);
-        ASSURE_E((fd_in = open(tofname, O_RDONLY)) != -1, goto open_err);
+        snprintf(tmp_fname, PATH_MAX, "%s/trace", etrace.tracefs_path);
+        LOGD("Accessing file: %s\n", tmp_fname);
+        ASSURE_E((fd_in = open(tmp_fname, O_RDONLY)) != -1, goto open_err);
 #endif
 
         /* Copy trace buffer to output */
