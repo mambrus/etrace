@@ -46,6 +46,7 @@ struct opts opts = {
 /* *INDENT-OFF* */
     .loglevel       = &log_filter_level,
     .ptime          = DEF_PTIME,
+    .htime          = DEF_HTIME,
     .ftrace_buffsz  = DEF_FTRACE_BUFF_SIZE_KB,
     .ftrace_clock   = DEF_FTRACE_CLOCK,
     .debugfs_path   = DEF_DEBUGFS_PATH,
@@ -108,9 +109,21 @@ void etrace_exit(int status)
     exit(status);
 }
 
+int time_expired(struct timeval t0, struct timeval t1, unsigned exptime_us)
+{
+    struct timeval t_diff;
+    long td;
+
+    t_diff = tv_diff(t0, t1);
+    td = t_diff.tv_sec * 1000000 + t_diff.tv_usec;
+    return exptime_us < td ? 1 : 0;
+}
+
 int main(int argc, char **argv)
 {
     int rc, cnt;
+    struct timeval T_start;
+    struct timeval T_now;
 
     LOGI("etrace version v%s \n", VERSION);
 
@@ -268,6 +281,7 @@ int main(int argc, char **argv)
     LOGI("Tracing starts\n");
     ASSURE_E(write_by_name("1", "%s/tracing_on", etrace.tracefs_path),
              goto err);
+    ASSURE(time_now(&T_start) != -1);
 
 #define TRUE 1
 #if TRUE
@@ -290,7 +304,11 @@ int main(int argc, char **argv)
     //ASSURE_E(fin != NULL, goto open_err);
     ASSURE_E((fin = fopen(tmp_fname, "r")) != NULL, goto open_err);
 
-    while (1) {
+    for (ASSURE(time_now(&T_now) != -1);
+         !time_expired(T_start, T_now, opts.htime);
+         ASSURE(time_now(&T_now) != -1)
+
+        ) {
         ASSURE_E(fgets(line_buff, 1024, fin) != NULL, goto io_err);
 #ifdef __ANDROID__
         ASSURE_E(puts(line_buff) > 0, goto io_err);

@@ -63,7 +63,10 @@ struct req_opt {
 /* General opts */
 struct opts {
     log_level *loglevel;        /* Verbosity level */
-    unsigned ptime;             /* Time to harvest in uS */
+    unsigned htime;             /* Time to harvest in uS */
+    unsigned ptime;             /* period-time in uS. I.e. time sleeping
+                                   letting system adapt. During the inverse,
+                                   trace-buffer is emptied into output */
     unsigned ftrace_buffsz;     /* Size in kB to (possibly) set trace-buffer */
     char ftrace_clock[NAME_MAX];    /* name of ftrace_clock to (possibly) use */
     char debugfs_path[PATH_MAX];    /* Path to where Linux debugfs is mounted */

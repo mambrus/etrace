@@ -14,10 +14,15 @@ set(DEF_WORKDIR
 	CACHE STRING
 	"Default workdir/where output is placed")
 
+set(DEF_HTIME
+	"1000"
+	CACHE STRING
+	"Default harvest-time (uS)")
+
 set(DEF_PTIME
 	"1000"
 	CACHE STRING
-	"Default harvest time (uS)")
+	"Default period-time (uS)")
 
 set(DEF_FTRACE_CLOCK
 	"local"

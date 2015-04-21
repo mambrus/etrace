@@ -63,6 +63,10 @@ static int opts_parse_opt(const char *cmd,
     switch (key) {
         case 'T':
             _req_opt('T')->cnt++;
+            opts->htime = arg ? atoi(arg) : -1;
+            break;
+        case 'P':
+            _req_opt('T')->cnt++;
             opts->ptime = arg ? atoi(arg) : -1;
             break;
         case 'c':
@@ -172,7 +176,8 @@ static int opts_parse_opt(const char *cmd,
 static struct option long_options[] = {
 /* *INDENT-OFF* */
     {"verbosity",      required_argument,  0,  'v'},
-    {"period",         required_argument,  0,  'T'},
+    {"period-time",    required_argument,  0,  'P'},
+    {"harvest-time",   required_argument,  0,  'T'},
     {"clock",          required_argument,  0,  'c'},
     {"buffer-size",    required_argument,  0,  's'},
     {"debugfs",        required_argument,  0,  'm'},
@@ -198,6 +203,7 @@ static struct option long_options[] = {
 static struct req_opt req_opts[] = {
 /* *INDENT-OFF* */
     {'v',  not_req,    at_least,   0},
+    {'P',  not_req,    precisely,  0},
     {'T',  not_req,    precisely,  0},
     {'c',  not_req,    precisely,  0},
     {'s',  not_req,    precisely,  0},
@@ -350,7 +356,7 @@ int opts_parse(int argc, char **argv, struct opts *opts)
     while (1) {
         int option_index = 0;
         int c = getopt_long(argc, argv,
-                            "v:T:c:s:m:p:te:f:i:w:o:zDuhV",
+                            "v:T:P:c:s:m:p:te:f:i:w:o:zDuhV",
                             long_options,
                             &option_index);
         /* Detect the end of the options. */
