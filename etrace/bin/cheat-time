@@ -1,0 +1,221 @@
+#!/usr/bin/python
+
+import argparse
+import collections
+import itertools
+import os
+import re
+import sys
+import tempfile
+
+line_re = re.compile(r"^(\d*)\.(\d+)(.*)$")
+
+# This function makes consecutive duplicate items unique and uniformly
+# ascending by appending a suffix. The length of the suffix depends on
+# the maximum number of consecutive duplicates (one character of up to
+# 9 duplicates, two characters for up to 99 duplicates and so
+# on). Non-duplicate items will be appended zeroes so that all items
+# will grow by the same suffix length.
+def unduplicate(items, debug=False):
+    v_prev, dup_seq = None, []
+    for v in items:
+        dup_seq.append(dup_seq[-1] + 1 if v == v_prev else 0)
+        v_prev = v
+    max_duplicates = max(dup_seq)
+    if max_duplicates < 1:
+        return items
+    dup_len_rev = []
+    dup_len_prev=1
+    for dup in reversed(dup_seq):
+        dup = max(dup + 1, dup_len_prev) if dup > 0 else 1
+        dup_len_rev.append(dup)
+        dup_len_prev = dup
+    fmt = "%%0%dd" % len(str(max_duplicates))
+    scale = 10 ** len(str(max_duplicates))
+    if debug:
+        print >>sys.stderr, "unduplicate() len(items) = %r" % (len(items),)
+        print >>sys.stderr, "unduplicate() max_duplicates = %r" % (max_duplicates,)
+        print >>sys.stderr, "unduplicate() scale = %r" % (scale,)
+        print >>sys.stderr, "unduplicate() fmt = %r" % (fmt,)
+    return [v + (fmt % (dup * scale / dup_len)) for v, dup, dup_len in itertools.izip(items, dup_seq, reversed(dup_len_rev))]
+
+#
+# Reads input data line by line expecting a positive floating point
+# number in a form DDD.DDD in the beginning of each line.  Each number
+# is reformatted by prepending and appending "0" charachers to make
+# each number be represented by a string with the same length and
+# decimal point at the same position. Returns a list of pairs.
+#
+def read_stream(stream):
+    data = []
+    while True:
+        s = stream.readline()
+        if s == "":
+            break
+        s = s.rstrip()
+        m = line_re.match(s)
+        if m:
+            data.append(m.groups())
+    prefix_len = max([len(s) for s, mks, line in data])
+    prefix = "0" * prefix_len
+    suffix_len = max([len(mks) for s, mks, line in data])
+    suffix = "0" * suffix_len
+    # keys are times formatted with fixed width so that it can be sorted alphabetically
+    return [(((prefix + s)[-prefix_len:])+"."+((mks + suffix)[:suffix_len]), rest) for s, mks, rest in data]
+
+#
+# Given a list of keys, it runs "diff -u" on keys and sorted(keys) and
+# yields pairs of indices of good elements surrounding bad span:
+# (prev_good_idx, next_good_idx)
+#
+diff_chunk_re = re.compile(r"^@@\s+-\s*(\d+)")
+def get_bad_spans(keys):
+    tmpdir = None
+    try:
+        tmpdir = tempfile.mkdtemp()
+        with file("%s/file1" % tmpdir, "w") as f:
+            for key in keys:
+                f.write("%s\n" % key)
+            f.close()
+        with file("%s/file2" % tmpdir, "w") as f:
+            for key in sorted(keys):
+                f.write("%s\n" % key)
+            f.close()
+        with os.popen("diff -u %s/file1 %s/file2 | sed -e '1,2d' -e '/^[^ -@]/d'" % (tmpdir, tmpdir), "r") as f:
+            idx = None
+            idx_prev_good, inside_bad_span = None, False
+            while True:
+                s = f.readline()
+                if s == "":
+                    break # eof
+                m = diff_chunk_re.match(s)
+                if m:
+                    idx = int(m.group(1)) - 1
+                    continue
+                c = s[0]
+                if c == ' ':
+                    if inside_bad_span:
+                        yield idx_prev_good, idx
+                        inside_bad_span = False
+                    idx_prev_good = idx
+                    idx += 1
+                elif c == '-':
+                    inside_bad_span = True
+                    idx += 1
+            if inside_bad_span:
+                yield idx_prev_good, None
+    finally:
+        if tmpdir:
+            os.system("/bin/rm -rf %s" % (tmpdir,))
+
+def main_unduplicate(istream, ostream, debug=False):
+    items = []
+    while True:
+        s = istream.readline()
+        if s == "":
+            break
+        items.append(s.strip())
+    try:
+        for v in unduplicate(items, debug=debug):
+            print >>ostream, "%s" % v
+    except IOError:
+        pass
+
+def str_insert(s, pos, substring):
+    return s[:pos] + substring + s[pos:]
+
+def spread_keys(key_prev, key_next, n_between):
+    point = key_prev.index(".")
+    fmt = "%%0%dd" % (len(key_prev)-1,)
+    key_prev = int(key_prev.replace('.', ''))
+    key_next = int(key_next.replace('.', ''))
+    keys_between = [key_prev + (key_next - key_prev) * (n + 1) / (n_between + 1) for n in xrange(n_between)]
+    keys_between = [str_insert(fmt % n, point, ".") for n in keys_between]
+    return keys_between
+
+def main_get_bad_spans(istream, ostream, debug=False):
+    items = []
+    while True:
+        s = istream.readline()
+        if s == "":
+            break
+        items.append(s.strip())
+    try:
+        for prev_good_idx, next_good_idx in get_bad_spans(items):
+            key_prev = items[prev_good_idx] if prev_good_idx != None else None
+            key_next = items[next_good_idx] if next_good_idx != None else None
+            n_between = (next_good_idx if next_good_idx !=  None else len(items)) - (prev_good_idx if prev_good_idx != None else 0) - 1
+            keys_between = items[((prev_good_idx + 1) if prev_good_idx != None else 0):(next_good_idx if next_good_idx != None else -1)]
+            print >>ostream, "- %s %s [%s]" % (key_prev, key_next, " ".join(keys_between))
+            print >>ostream, "+ %s %s [%s]" % (key_prev, key_next, " ".join(spread_keys(key_prev, key_next, n_between)))
+    except IOError:
+        pass
+
+def main_cheat(istream, ostream, debug=False):
+    data = read_stream(istream)
+    keys = unduplicate([k for k, rest in data])
+    keys_new = keys[:]
+    num_bad_keys = 0
+    num_dropped_keys = 0
+    for prev_good_idx, next_good_idx in get_bad_spans(keys):
+        cheat_keys = None
+        n_between = (next_good_idx if next_good_idx !=  None else len(items)) - (prev_good_idx if prev_good_idx != None else 0) - 1
+        if prev_good_idx != None and next_good_idx != None:
+            num_bad_keys += n_between
+            cheat_keys = spread_keys(keys[prev_good_idx], keys[next_good_idx], n_between)
+            keys_new[prev_good_idx + 1 : next_good_idx] = cheat_keys
+        else:
+            raise Exception("@todo implement")
+    keys_new = unduplicate(keys_new)
+    if debug:
+        print >>sys.stderr, "data = %r" % (data[:5])
+        print >>sys.stderr, "keys = %r" % (keys[:5])
+        print >>sys.stderr, "keys_new = %r" % (keys_new[:5])
+        print >>sys.stderr, "len(data) = %d" % (len(data),)
+        print >>sys.stderr, "len(keys) = %d" % (len(keys),)
+        print >>sys.stderr, "num_bad_keys = %r" % (num_bad_keys,)
+        print >>sys.stderr, "len(keys_new) = %d" % (len(keys_new),)
+    try:
+        for k, (k_orig, rest) in itertools.izip(keys_new, data):
+            print >>ostream, "%s%s" % (k.lstrip('0'), rest)
+    except IOError:
+        pass
+
+def main(argv):
+    parser = argparse.ArgumentParser(prog="cheat-time")
+    parser.add_argument('-i', '--input', dest='input_file',
+                        type=str,
+                        metavar='INPUT_FILE',
+                        default='-',
+                        help='Specify INPUT_FILE (default is "-")')
+    parser.add_argument('-o', '--output', dest='output_file',
+                        type=str,
+                        metavar='OUTPUT_FILE',
+                        default='-',
+                        help='Specify OUTPUT_FILE (default is "-")')
+    parser.add_argument('-d', dest='debug',
+                        action='store_true',
+                        default=False,
+                        help='Print extra debug information to stderr')
+    parser.add_argument('-u', dest='unduplicate',
+                        action='store_true',
+                        default=False,
+                        help='Run unduplicate only')
+    parser.add_argument('-b', dest='bad',
+                        action='store_true',
+                        default=False,
+                        help='Run get_bad_spans only')
+    # parse and run
+    args = parser.parse_args()
+    istream = sys.stdin  if args.input_file  == '-' else open(args.input_file,  "r")
+    ostream = sys.stdout if args.output_file == '-' else open(args.output_file, "r")
+    if args.unduplicate:
+        main_unduplicate(istream, ostream, debug=args.debug)
+    elif args.bad:
+        main_get_bad_spans(istream, ostream, debug=args.debug)
+    else:
+        main_cheat(istream, ostream, debug=args.debug)
+
+
+if __name__ == "__main__" and os.getenv("INSIDE_EMACS") == None:
+        main(sys.argv[1:])
