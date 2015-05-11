@@ -155,13 +155,31 @@ def main_cheat(istream, ostream, debug=False):
     data = read_stream(istream)
     keys = unduplicate([k for k, rest in data])
     keys_new = keys[:]
+    num_single_jump_keys = 0
+    num_single_jump_regions = 0
+    single_jump_regions = []
+    single_jumps = [0]
     num_bad_keys = 0
+    num_bad_regions = 0
+    bad_regions = []
     num_dropped_keys = 0
     for prev_good_idx, next_good_idx in get_bad_spans(keys):
         cheat_keys = None
         n_between = (next_good_idx if next_good_idx !=  None else len(items)) - (prev_good_idx if prev_good_idx != None else 0) - 1
         if prev_good_idx != None and next_good_idx != None:
-            num_bad_keys += n_between
+            bad_region = keys[prev_good_idx + 1 : next_good_idx]
+            bad_region_span = float(bad_region[-1]) - float(bad_region[0])
+            good_region_span = float(keys[next_good_idx]) - float(keys[prev_good_idx])
+            if bad_region_span < good_region_span and bad_region == sorted(bad_region):
+                num_single_jump_keys += n_between
+                num_single_jump_regions += 1
+                jump = float(bad_region[0]) - (float(keys[prev_good_idx]) + (good_region_span - bad_region_span) / 2.0)
+                single_jumps.append(jump)
+                single_jump_regions.append((keys[prev_good_idx], keys[next_good_idx]))
+            else:
+                num_bad_keys += n_between
+                num_bad_regions += 1
+                bad_regions.append((keys[prev_good_idx], keys[next_good_idx]))
             cheat_keys = spread_keys(keys[prev_good_idx], keys[next_good_idx], n_between)
             keys_new[prev_good_idx + 1 : next_good_idx] = cheat_keys
         else:
@@ -174,6 +192,12 @@ def main_cheat(istream, ostream, debug=False):
         print >>sys.stderr, "len(data) = %d" % (len(data),)
         print >>sys.stderr, "len(keys) = %d" % (len(keys),)
         print >>sys.stderr, "num_bad_keys = %r" % (num_bad_keys,)
+        print >>sys.stderr, "num_bad_regions = %r" % (num_bad_regions,)
+        print >>sys.stderr, "bad_regions = %r" % (bad_regions,)
+        print >>sys.stderr, "num_single_jump_keys = %r" % (num_single_jump_keys,)
+        print >>sys.stderr, "num_single_jump_regions = %r" % (num_single_jump_regions,)
+        print >>sys.stderr, "single_jump_regions = %r" % (single_jump_regions,)
+        print >>sys.stderr, "min..max(single_jumps) = %r .. %r" % (min(single_jumps),max(single_jumps))
         print >>sys.stderr, "len(keys_new) = %d" % (len(keys_new),)
     try:
         for k, (k_orig, rest) in itertools.izip(keys_new, data):
