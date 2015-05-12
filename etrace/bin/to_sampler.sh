@@ -7,11 +7,17 @@
 #   Valid delimiters are ,; and space (one of). If space is used, you have
 #   make sure it's passed as *one* argument.
 #
+# Until first cpu_frequency event for each CPU is is seen $1 is used. This
+# value should be -1 if frq is unknown, This is so that scripting after this
+# can determine which frequency was running during the switch.  Note: If
+# frequency is fixated, cpu_frequency events will be missing. But since we
+# can find out the frequency by reading sysfs, we can pass it via $1.
+
 # Usage is a little awkward ATM. The trace-file is usually an etrace-file,
 # i.e. it contains only PID:s of interest. In the header there's a list
 # of the PID:s however. Here's an example of how to use this script with an
-# etrace file.
-
+# etrace file. 
+#
 # ETRACE_FILE=somefile.etrace
 #
 # to_sampler.sh $ETRACE_FILE $(
@@ -27,12 +33,13 @@ source "${SCRIPTS_DIR}/fix_pname.sh"
 
 # Convert to sampler output-format
 function to_sampler(){
-    local IN=$1
-    local THREADS="${2}"
+	local DFLTFRQ=$1
+    local IN=$2
+    local THREADS="${3}"
     local MAX_CPUS=16
 
     cat $IN | fix_pname | \
-    awk -vTHREADS="${THREADS}" -vMAX_CPUS="${MAX_CPUS}" '
+    awk -vTHREADS="${THREADS}" -vMAX_CPUS="${MAX_CPUS}" -vDFLTFRQ=$DFLTFRQ '
 		# Trims ":"
         function rtrim_1(s) { sub(/[:]+$/, "", s); return s }
         function ltrim_1(s) { sub(/^[:]+/, "", s); return s }
@@ -68,7 +75,7 @@ function to_sampler(){
 			NPIDS=split(THREADS, THREADA, /[,; ]/);
             # Initialize last seen CPU_freq
             for (i=0; i<MAX_CPUS; i++) {
-                FCPU[i+1]=-1;
+                FCPU[i+1]=DFLTFRQ;
             }
 		}
 
@@ -109,17 +116,19 @@ function to_sampler(){
 if [ "$TO_SAMPLER_SH" == $(basename $(readlink -f $0)) ]; then
 #Not sourced, do something with this.
 	export PATH=${SCRIPTS_DIR}:$PATH
+	DFLTFRQ=${1-"-1"}
 
     if [ -t 0 ]; then
-        if [ $# != 2 ]; then
+        if [ $# != 3 ]; then
             echo "$(basename $(readlink -f $0)) failed:" 1>&2
-            echo "  in terminal-mode 2 arguments are required" 1>&2
-            echo "  #1: Filename" 1>&2
-            echo "  #2: Delimitered list of PID:s" 1>&2
+            echo "  in terminal-mode 3 arguments are required" 1>&2
+            echo "  #1: Dflt freq. Use -1 unless certain" 1>&2
+            echo "  #2: Filename" 1>&2
+            echo "  #3: Delimitered list of PID:s" 1>&2
             exit 1
         fi
-        INFILE="${1}"
-        THREADS="${2}"
+        INFILE="${2}"
+        THREADS="${3}"
     else
         if [ $# != 1 ]; then
             echo "$(basename $(readlink -f $0)) failed:" 1>&2
@@ -127,10 +136,10 @@ if [ "$TO_SAMPLER_SH" == $(basename $(readlink -f $0)) ]; then
             exit 1
         fi
         INFILE="--"
-        THREADS="${1}"
+        THREADS="${2}"
     fi
 
-	to_sampler "${INFILE}" "${THREADS}"
+	to_sampler $DFLTFRQ "${INFILE}" "${THREADS}"
 fi
 
 fi
