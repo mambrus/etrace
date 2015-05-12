@@ -21,6 +21,7 @@
 #include <stdio.h>
 #include <config.h>
 #include <sys/time.h>
+#include <sys/stat.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <errno.h>
@@ -128,12 +129,11 @@ int main(int argc, char **argv)
     LOGI("etrace version v%s \n", VERSION);
 
     assert_ext((rc =
-                mlist_opencreate(sizeof(struct event), NULL, &etrace.event_list)
-               ) == 0);
+                mlist_opencreate(sizeof(struct event), NULL,
+                                 &etrace.event_list)) == 0);
     assert_ext((rc =
                 mlist_opencreate(sizeof(struct pid_trigger), NULL,
-                                 &etrace.pid_trigger_list)
-               ) == 0);
+                                 &etrace.pid_trigger_list)) == 0);
 
     opts_init();
     memset(opts.outfname, 0, PATH_MAX);
@@ -211,11 +211,13 @@ int main(int argc, char **argv)
     /*Use high level form as work-around */
     {
         FILE *f;
+
+        LOGD("Clearing ftrace buffer\n", etrace.opts->pid);
         ASSURE_E((f =
                   fopen("/sys/kernel/debug/tracing/trace", "w")) != NULL,
                  goto err);
 
-        fprintf(f, "0");
+        ASSURE_E((fprintf(f, "0") >= 0), goto err);
         fflush(f);
         fclose(f);
     }
@@ -295,8 +297,12 @@ int main(int argc, char **argv)
 #ifndef __ANDROID__
     ASSURE_E((fout = fdopen(etrace.out_fd, "w")) != NULL, goto open_err);
 #else
-    if (etrace.out_fd != 1)
-        ASSURE_E((fout = fdopen(etrace.out_fd, "w")) != NULL, goto open_err);
+    if (etrace.out_fd != 1) {
+        close(etrace.out_fd);
+        LOGI("Out-file chmod and opened for append: %s\n", etrace.outfname);
+        ASSURE_E((chmod(etrace.outfname, 0666) >= 0), goto open_err);
+        ASSURE_E((fout = fopen(etrace.outfname, "a")) != NULL, goto open_err);
+    }
 #endif
     snprintf(tmp_fname, PATH_MAX, "%s/trace_pipe", etrace.tracefs_path);
     LOGD("Accessing file: %s\n", tmp_fname);
@@ -306,14 +312,16 @@ int main(int argc, char **argv)
 
     for (ASSURE(time_now(&T_now) != -1);
          !time_expired(T_start, T_now, opts.htime);
-         ASSURE(time_now(&T_now) != -1)
-
-        ) {
+         ASSURE(time_now(&T_now) != -1)) {
         ASSURE_E(fgets(line_buff, 1024, fin) != NULL, goto io_err);
 #ifdef __ANDROID__
-        ASSURE_E(puts(line_buff) > 0, goto io_err);
+        if (etrace.out_fd == 1) {
+            ASSURE_E(puts(line_buff) > 0, goto io_err);
+        } else {
+            ASSURE_E(fputs(line_buff, fout) >= 0, goto io_err);
+        }
 #else
-        ASSURE_E(fputs(line_buff, fout) > 0, goto io_err);
+        ASSURE_E(fputs(line_buff, fout) >= 0, goto io_err);
 #endif
     }
 
