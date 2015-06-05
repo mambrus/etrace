@@ -7,3 +7,6 @@
 [submodule "etrace/lib/libmtime"]
 	path = etrace/lib/libmtime
 	url = https://github.com/mambrus/libmtime
+[submodule "wikidata"]
+	path = wikidata
+	url = https://github.com/mambrus/wikidata_etrace

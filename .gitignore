@@ -1,7 +1,6 @@
 *.d
 *.o
 *.hi
-wikidata/
 gitit.log
 gitit-users
 cache/
