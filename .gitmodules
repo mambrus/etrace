@@ -1,0 +1,9 @@
+[submodule "etrace/lib/liblog"]
+	path = etrace/lib/liblog
+	url = https://github.com/mambrus/liblog
+[submodule "etrace/lib/libmlist"]
+	path = etrace/lib/libmlist
+	url = https://github.com/mambrus/libmlist
+[submodule "etrace/lib/libmtime"]
+	path = etrace/lib/libmtime
+	url = https://github.com/mambrus/libmtime
