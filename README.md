@@ -32,13 +32,15 @@ http://gitit.net/Installing
 
 [http://localhost:5011](http://localhost:5011)
 
-Cloning project from github:
-----------------------------
+Cloning project from SOMC:
+--------------------------
 
-To clone project including it's submodules you can also do as follows:
+To clone project including it's submodules from SOMC internal server:
 
-    git clone --recursive https://github.com/mambrus/etrace.git
+    git clone -b master_somc --single-branch --recursive \
+	   seldlx0294:/opt/gits/etrace.git
 
-In this case #1 under "Documentation" can be omitted.
+**Note** please keep "master_somc" as the master branch as "master" is
+reserverd for the public project.
 
 
