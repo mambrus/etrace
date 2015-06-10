@@ -16,7 +16,7 @@ line_re = re.compile(r"^(\d*)\.(\d+)(.*)$")
 # 9 duplicates, two characters for up to 99 duplicates and so
 # on). Non-duplicate items will be appended zeroes so that all items
 # will grow by the same suffix length.
-def unduplicate(items, debug=False):
+def unduplicate(items, debug=0):
     v_prev, dup_seq = None, []
     for v in items:
         dup_seq.append(dup_seq[-1] + 1 if v == v_prev else 0)
@@ -32,7 +32,7 @@ def unduplicate(items, debug=False):
         dup_len_prev = dup
     fmt = "%%0%dd" % len(str(max_duplicates))
     scale = 10 ** len(str(max_duplicates))
-    if debug:
+    if debug >= 1:
         print >>sys.stderr, "unduplicate() len(items) = %r" % (len(items),)
         print >>sys.stderr, "unduplicate() max_duplicates = %r" % (max_duplicates,)
         print >>sys.stderr, "unduplicate() scale = %r" % (scale,)
@@ -108,7 +108,7 @@ def get_bad_spans(keys):
         if tmpdir:
             os.system("/bin/rm -rf %s" % (tmpdir,))
 
-def main_unduplicate(istream, ostream, debug=False):
+def main_unduplicate(istream, ostream, debug=0):
     items = []
     while True:
         s = istream.readline()
@@ -133,7 +133,7 @@ def spread_keys(key_prev, key_next, n_between):
     keys_between = [str_insert(fmt % n, point, ".") for n in keys_between]
     return keys_between
 
-def main_get_bad_spans(istream, ostream, debug=False):
+def main_get_bad_spans(istream, ostream, debug=0):
     items = []
     while True:
         s = istream.readline()
@@ -151,54 +151,170 @@ def main_get_bad_spans(istream, ostream, debug=False):
     except IOError:
         pass
 
-def main_cheat(istream, ostream, debug=False):
+class BadSpanBase(object):
+    def __init__(self, keys, name):
+        self.keys = keys
+        self.name = name
+        self.statistics = []
+    def shortname(self): return "?"
+    def n_between(self, prev_good_idx, next_good_idx):
+        return (next_good_idx if next_good_idx !=  None else len(self.keys)) - (prev_good_idx if prev_good_idx != None else 0) - 1
+    def get_bad_region(self, prev_good_idx, next_good_idx):
+        return self.keys[prev_good_idx + 1 : next_good_idx]
+    def get_bad_region_span(self, prev_good_idx, next_good_idx):
+        bad_region = self.get_bad_region(prev_good_idx, next_good_idx)
+        return float(bad_region[-1]) - float(bad_region[0])
+    def get_good_region_span(self, prev_good_idx, next_good_idx):
+        return float(self.keys[next_good_idx]) - float(self.keys[prev_good_idx])
+    def apply(self, prev_good_idx, next_good_idx, stat=True):
+        return None # or triple with (prev_good_idx, next_good_idx, list_of_new_values)
+    def debug(self):
+        print >>sys.stderr, "num_%s_keys = %r" % (self.name, sum([n - p - 1 for p, n in self.statistics]),)
+        print >>sys.stderr, "num_%s_regions = %r" % (self.name, len(self.statistics),)
+        print >>sys.stderr, "%s_regions = %r" % (self.name, [(self.keys[p], self.keys[n], n-p-1) for p, n in self.statistics],)
+
+class BadSpanSpread(BadSpanBase):
+    def __init__(self, keys):
+        super(BadSpanSpread, self).__init__(keys, name="bad")
+    def shortname(self): return "spread"
+    def apply(self, prev_good_idx, next_good_idx):
+        if prev_good_idx == None or next_good_idx == None:
+            return None
+        return (prev_good_idx, next_good_idx, None)
+
+class BadSpanOne(BadSpanBase):
+    def __init__(self, keys):
+        super(BadSpanOne, self).__init__(keys, name="one")
+    def shortname(self): return "one"
+    def apply(self, prev_good_idx, next_good_idx):
+        if prev_good_idx == None or next_good_idx == None:
+            return None
+        if next_good_idx - prev_good_idx != 2:
+            return None
+        return (prev_good_idx, next_good_idx, None)
+
+class BadSpanSingleJump(BadSpanBase):
+    def __init__(self, keys):
+        super(BadSpanSingleJump, self).__init__(keys, name="single_jump")
+    def shortname(self): return "single"
+    def apply(self, prev_good_idx, next_good_idx):
+        if prev_good_idx == None or next_good_idx == None:
+            return None
+        bad_region = self.get_bad_region(prev_good_idx, next_good_idx)
+        bad_region_span = self.get_bad_region_span(prev_good_idx, next_good_idx)
+        good_region_span = self.get_good_region_span(prev_good_idx, next_good_idx)
+        if bad_region_span < good_region_span and bad_region == sorted(bad_region):
+            return (prev_good_idx, next_good_idx, None)
+        return None
+    def debug(self):
+        super(BadSpanSingleJump, self).debug()
+        single_jumps = [float(self.keys[p+1]) - (float(self.keys[p]) + (self.get_good_region_span(p,n) - self.get_bad_region_span(p,n)) / 2.0) for p, n in self.statistics]
+        print >>sys.stderr, "min..max(single_jumps) = %r .. %r" % (min(single_jumps) if len(single_jumps) > 0 else None,max(single_jumps) if len(single_jumps) > 0 else None)
+
+class BadSpanMonotonic(BadSpanBase):
+    def __init__(self, keys):
+        super(BadSpanMonotonic, self).__init__(keys, name="monotonic")
+    def shortname(self): return "mono"
+    def apply(self, prev_good_idx, next_good_idx):
+        if prev_good_idx == None or next_good_idx == None:
+            return None
+        bad_region = self.get_bad_region(prev_good_idx, next_good_idx)
+        if bad_region == sorted(bad_region):
+            return (prev_good_idx, next_good_idx, None)
+        return None
+
+class BadSpanSearchFromBackJump(BadSpanBase):
+    def __init__(self, keys):
+        super(BadSpanSearchFromBackJump, self).__init__(keys, name="searchFromBackJump")
+    def shortname(self): return "move"
+    def apply(self, prev_good_idx, next_good_idx):
+        if prev_good_idx == None or next_good_idx == None:
+            return None
+        backjumps = []
+        for i in xrange(prev_good_idx, next_good_idx):
+            if self.keys[i + 1] < self.keys[i]:
+                backjumps.append(i + 1)
+        if len(backjumps) != 1:
+            return None
+        backjump = backjumps[0]
+        for i in xrange(1, 3*(next_good_idx-prev_good_idx)):
+            if backjump + i < len(self.keys) and self.keys[backjump - 1] < self.keys[backjump + i]:
+                return (backjump - 1, backjump + i, None)
+            if backjump - i >= 0 and self.keys[backjump - i] < self.keys[backjump]:
+                return (backjump - i, backjump, None)
+        return None
+
+def bad_span_correct(handlers, prev_limit_idx, prev_good_idx, next_good_idx, next_limit_idx):
+    for h in handlers:
+        result = h.apply(prev_good_idx, next_good_idx)
+        if result != None:
+            prev_good_idx, next_good_idx, new_items = result
+            if prev_limit_idx <= prev_good_idx and next_good_idx <= next_limit_idx:
+                h.statistics.append((prev_good_idx, next_good_idx))
+                if new_items == None:
+                    n_between = h.n_between(prev_good_idx, next_good_idx)
+                    new_items = spread_keys(h.keys[prev_good_idx], h.keys[next_good_idx], n_between)
+                return prev_good_idx, next_good_idx, new_items, h
+    raise Exception("@todo no suitable handler found for bad span")
+
+def format_table(rows):
+    cols = max([len(row) for row in rows])
+    empty_row = [''] * cols
+    rows = [([cell.lstrip(", ") for cell in row] + empty_row)[:cols] for row in rows]
+    widths = [max([len(cell) for cell in [row[col] for row in rows]]) for col in xrange(cols)]
+    fmt = " | ".join(["%%-%ds" % width for width in widths])
+    for row in rows:
+        yield (fmt % tuple(row)).rstrip()
+
+COL_BACKJUMP=1
+COL_BAD_ORIG=2
+COL_BAD_NEW=3
+
+def main_cheat(istream, ostream, debug=0):
     data = read_stream(istream)
     keys = unduplicate([k for k, rest in data])
     keys_new = keys[:]
-    num_single_jump_keys = 0
-    num_single_jump_regions = 0
-    single_jump_regions = []
-    single_jumps = [0]
-    num_bad_keys = 0
-    num_bad_regions = 0
-    bad_regions = []
-    num_dropped_keys = 0
-    for prev_good_idx, next_good_idx in get_bad_spans(keys):
-        cheat_keys = None
-        n_between = (next_good_idx if next_good_idx !=  None else len(items)) - (prev_good_idx if prev_good_idx != None else 0) - 1
-        if prev_good_idx != None and next_good_idx != None:
-            bad_region = keys[prev_good_idx + 1 : next_good_idx]
-            bad_region_span = float(bad_region[-1]) - float(bad_region[0])
-            good_region_span = float(keys[next_good_idx]) - float(keys[prev_good_idx])
-            if bad_region_span < good_region_span and bad_region == sorted(bad_region):
-                num_single_jump_keys += n_between
-                num_single_jump_regions += 1
-                jump = float(bad_region[0]) - (float(keys[prev_good_idx]) + (good_region_span - bad_region_span) / 2.0)
-                single_jumps.append(jump)
-                single_jump_regions.append((keys[prev_good_idx], keys[next_good_idx]))
-            else:
-                num_bad_keys += n_between
-                num_bad_regions += 1
-                bad_regions.append((keys[prev_good_idx], keys[next_good_idx]))
-            cheat_keys = spread_keys(keys[prev_good_idx], keys[next_good_idx], n_between)
-            keys_new[prev_good_idx + 1 : next_good_idx] = cheat_keys
-        else:
-            raise Exception("@todo implement")
+    handlers = [BadSpanOne(keys), BadSpanMonotonic(keys), BadSpanSearchFromBackJump(keys), BadSpanSingleJump(keys), BadSpanSpread(keys)]
+    spans = list(get_bad_spans(keys))
+    prev_limit_idx = 0
+    new_spans = []
+    for i, (prev_good_idx, next_good_idx) in enumerate(spans):
+        next_limit_idx = spans[i + 1][0] if i + 1 < len(spans) else (len(keys) - 1)
+        prev_good_idx, next_good_idx, new_items, h = bad_span_correct(handlers, prev_limit_idx, prev_good_idx, next_good_idx, next_limit_idx)
+        new_spans.append((prev_good_idx, next_good_idx, h))
+        keys_new[prev_good_idx + 1 : next_good_idx] = new_items
+        prev_limit_idx = next_good_idx
     keys_new = unduplicate(keys_new)
-    if debug:
+    if debug >= 1:
         print >>sys.stderr, "data = %r" % (data[:5])
         print >>sys.stderr, "keys = %r" % (keys[:5])
         print >>sys.stderr, "keys_new = %r" % (keys_new[:5])
         print >>sys.stderr, "len(data) = %d" % (len(data),)
         print >>sys.stderr, "len(keys) = %d" % (len(keys),)
-        print >>sys.stderr, "num_bad_keys = %r" % (num_bad_keys,)
-        print >>sys.stderr, "num_bad_regions = %r" % (num_bad_regions,)
-        print >>sys.stderr, "bad_regions = %r" % (bad_regions,)
-        print >>sys.stderr, "num_single_jump_keys = %r" % (num_single_jump_keys,)
-        print >>sys.stderr, "num_single_jump_regions = %r" % (num_single_jump_regions,)
-        print >>sys.stderr, "single_jump_regions = %r" % (single_jump_regions,)
-        print >>sys.stderr, "min..max(single_jumps) = %r .. %r" % (min(single_jumps),max(single_jumps))
+        for h in handlers:
+            h.debug()
         print >>sys.stderr, "len(keys_new) = %d" % (len(keys_new),)
+    if debug >= 2:
+        dump = [[k, '','',''] for k in keys]
+        for idx, ss in [(COL_BAD_ORIG, spans), (COL_BAD_NEW, new_spans)]:
+            for span_data in ss:
+                prev_good_idx = span_data[0]
+                next_good_idx = span_data[1]
+                shortname = span_data[2].shortname() if len(span_data) >= 3 else ""
+                range_good = float(keys[next_good_idx]) - float(keys[prev_good_idx])
+                region_bad = [float(keys[i]) for i in xrange(prev_good_idx + 1, next_good_idx)]
+                range_bad = max(region_bad) - min(region_bad)
+                desc = "%s %.6f-%.6f=%.6f" % (shortname, range_good, range_bad, range_good - range_bad)
+                dump[prev_good_idx][idx] += ", I~ " + desc.strip()
+                for i in xrange(prev_good_idx + 1, next_good_idx):
+                    dump[i][idx] += ", I"
+                dump[next_good_idx][idx] += ", I_"
+        float_keys = [float(k) for k in keys]
+        for i in xrange(1, len(float_keys)):
+            if float_keys[i-1] > float_keys[i]:
+                dump[i][COL_BACKJUMP] = "BH=%.6f" % (float_keys[i-1]-float_keys[i])
+        for line in format_table(dump):
+            print >>sys.stderr, "%s" % (line,)
     try:
         for k, (k_orig, rest) in itertools.izip(keys_new, data):
             print >>ostream, "%s%s" % (k.lstrip('0'), rest)
@@ -220,7 +336,12 @@ def main(argv):
     parser.add_argument('-d', dest='debug',
                         action='store_true',
                         default=False,
-                        help='Print extra debug information to stderr')
+                        help='Print extra debug information to stderr, equivalent to -D 1')
+    parser.add_argument('-D', dest='debug_level',
+                        type=int,
+                        metavar='LEVEL',
+                        default=0,
+                        help='Print extra debug information to stderr, a useful usage is "cheat-time -D 2 -i INPUT_FILE -o /dev/null |& grep -C 5 \'[A-Za-z]\'"')
     parser.add_argument('-u', dest='unduplicate',
                         action='store_true',
                         default=False,
@@ -233,12 +354,14 @@ def main(argv):
     args = parser.parse_args()
     istream = sys.stdin  if args.input_file  == '-' else open(args.input_file,  "r")
     ostream = sys.stdout if args.output_file == '-' else open(args.output_file, "r")
+    if args.debug_level == 0 and args.debug:
+        args.debug_level = 1
     if args.unduplicate:
-        main_unduplicate(istream, ostream, debug=args.debug)
+        main_unduplicate(istream, ostream, debug=args.debug_level)
     elif args.bad:
-        main_get_bad_spans(istream, ostream, debug=args.debug)
+        main_get_bad_spans(istream, ostream, debug=args.debug_level)
     else:
-        main_cheat(istream, ostream, debug=args.debug)
+        main_cheat(istream, ostream, debug=args.debug_level)
 
 
 if __name__ == "__main__" and os.getenv("INSIDE_EMACS") == None:
