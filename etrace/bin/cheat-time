@@ -3,6 +3,8 @@
 import argparse
 import collections
 import itertools
+import math
+import operator
 import os
 import re
 import sys
@@ -124,6 +126,9 @@ def main_unduplicate(istream, ostream, debug=0):
 def str_insert(s, pos, substring):
     return s[:pos] + substring + s[pos:]
 
+# when "keys_between" are not monotonically accending we can not do
+# better then dividing interval between "key_prev" and "key_next"
+# eqally between all "n_between"
 def spread_keys(key_prev, key_next, n_between):
     point = key_prev.index(".")
     fmt = "%%0%dd" % (len(key_prev)-1,)
@@ -131,6 +136,34 @@ def spread_keys(key_prev, key_next, n_between):
     key_next = int(key_next.replace('.', ''))
     keys_between = [key_prev + (key_next - key_prev) * (n + 1) / (n_between + 1) for n in xrange(n_between)]
     keys_between = [str_insert(fmt % n, point, ".") for n in keys_between]
+    return keys_between
+
+# when "keys_between" are monotonically accending we can scale up/down
+# intervals between them to place them between "key_prev" and
+# "key_next"
+def squeeze_keys(key_prev, key_next, keys_between):
+    point = key_prev.index(".")
+    fmt = "%%0%dd" % (len(key_prev)-1,)
+    key_prev = int(key_prev.replace('.', ''))
+    key_next = int(key_next.replace('.', ''))
+    keys_between = [int(k.replace('.', '')) for k in keys_between]
+    bad_span = keys_between[-1] - keys_between[0]
+    if bad_span == 0:
+        # const
+        f = lambda x: key_prev + float(key_next - key_prev) / 2
+    else:
+        good_span = key_next - key_prev
+        if bad_span <= good_span:
+            gap = float(good_span - bad_span) / 2
+        else:
+            gap = float(good_span) / (len(keys_between) + 1)
+        corrected_span = good_span - 2 * gap
+        a, b = float(corrected_span) / bad_span, key_prev + gap
+        x0 = keys_between[0]
+        f = lambda x: a * (x - x0) + b
+    keys_between = map(f, keys_between) # floats
+    keys_between = [int(math.floor(n)) for n in keys_between] # integers
+    keys_between = [str_insert(fmt % n, point, ".") for n in keys_between] # strings
     return keys_between
 
 def main_get_bad_spans(istream, ostream, debug=0):
@@ -156,9 +189,12 @@ class BadSpanBase(object):
         self.keys = keys
         self.name = name
         self.statistics = []
+        self.nonzero = True
     def shortname(self): return "?"
     def n_between(self, prev_good_idx, next_good_idx):
         return (next_good_idx if next_good_idx !=  None else len(self.keys)) - (prev_good_idx if prev_good_idx != None else 0) - 1
+    def keys_between(self, prev_good_idx, next_good_idx):
+        return self.keys[(prev_good_idx + 1) if prev_good_idx != None else 0 : next_good_idx if next_good_idx != None else len(self.keys)]
     def get_bad_region(self, prev_good_idx, next_good_idx):
         return self.keys[prev_good_idx + 1 : next_good_idx]
     def get_bad_region_span(self, prev_good_idx, next_good_idx):
@@ -172,13 +208,22 @@ class BadSpanBase(object):
         print >>sys.stderr, "num_%s_keys = %r" % (self.name, sum([n - p - 1 for p, n in self.statistics]),)
         print >>sys.stderr, "num_%s_regions = %r" % (self.name, len(self.statistics),)
         print >>sys.stderr, "%s_regions = %r" % (self.name, [(self.keys[p], self.keys[n], n-p-1) for p, n in self.statistics],)
+    def correct(self, prev_good_idx, next_good_idx):
+        n_between = self.n_between(prev_good_idx, next_good_idx)
+        return spread_keys(self.keys[prev_good_idx], self.keys[next_good_idx], n_between)
+    def isfatal(self):
+        return False
+    def check_limits(self, prev_limit_idx, prev_good_idx, next_good_idx, next_limit_idx):
+        return prev_limit_idx <= prev_good_idx and next_good_idx <= next_limit_idx
 
 class BadSpanSpread(BadSpanBase):
     def __init__(self, keys):
         super(BadSpanSpread, self).__init__(keys, name="bad")
-    def shortname(self): return "spread"
+    def shortname(self): return "bad"
     def apply(self, prev_good_idx, next_good_idx):
         if prev_good_idx == None or next_good_idx == None:
+            return None
+        if self.nonzero and self.keys[prev_good_idx] == self.keys[next_good_idx]:
             return None
         return (prev_good_idx, next_good_idx, None)
 
@@ -188,6 +233,8 @@ class BadSpanOne(BadSpanBase):
     def shortname(self): return "one"
     def apply(self, prev_good_idx, next_good_idx):
         if prev_good_idx == None or next_good_idx == None:
+            return None
+        if self.nonzero and self.keys[prev_good_idx] == self.keys[next_good_idx]:
             return None
         if next_good_idx - prev_good_idx != 2:
             return None
@@ -199,6 +246,8 @@ class BadSpanSingleJump(BadSpanBase):
     def shortname(self): return "single"
     def apply(self, prev_good_idx, next_good_idx):
         if prev_good_idx == None or next_good_idx == None:
+            return None
+        if self.nonzero and self.keys[prev_good_idx] == self.keys[next_good_idx]:
             return None
         bad_region = self.get_bad_region(prev_good_idx, next_good_idx)
         bad_region_span = self.get_bad_region_span(prev_good_idx, next_good_idx)
@@ -212,18 +261,23 @@ class BadSpanSingleJump(BadSpanBase):
         print >>sys.stderr, "min..max(single_jumps) = %r .. %r" % (min(single_jumps) if len(single_jumps) > 0 else None,max(single_jumps) if len(single_jumps) > 0 else None)
 
 class BadSpanMonotonic(BadSpanBase):
-    def __init__(self, keys):
-        super(BadSpanMonotonic, self).__init__(keys, name="monotonic")
+    def __init__(self, keys, name="monotonic"):
+        super(BadSpanMonotonic, self).__init__(keys, name=name)
     def shortname(self): return "mono"
     def apply(self, prev_good_idx, next_good_idx):
         if prev_good_idx == None or next_good_idx == None:
+            return None
+        if self.nonzero and self.keys[prev_good_idx] == self.keys[next_good_idx]:
             return None
         bad_region = self.get_bad_region(prev_good_idx, next_good_idx)
         if bad_region == sorted(bad_region):
             return (prev_good_idx, next_good_idx, None)
         return None
+    def correct(self, prev_good_idx, next_good_idx):
+        keys_between = self.keys_between(prev_good_idx, next_good_idx)
+        return squeeze_keys(self.keys[prev_good_idx], self.keys[next_good_idx], keys_between)
 
-class BadSpanSearchFromBackJump(BadSpanBase):
+class BadSpanSearchFromBackJump(BadSpanMonotonic):
     def __init__(self, keys):
         super(BadSpanSearchFromBackJump, self).__init__(keys, name="searchFromBackJump")
     def shortname(self): return "move"
@@ -237,25 +291,41 @@ class BadSpanSearchFromBackJump(BadSpanBase):
         if len(backjumps) != 1:
             return None
         backjump = backjumps[0]
+        compare = operator.lt if self.nonzero else operator.le
         for i in xrange(1, 3*(next_good_idx-prev_good_idx)):
-            if backjump + i < len(self.keys) and self.keys[backjump - 1] < self.keys[backjump + i]:
+            if backjump + i < len(self.keys) and compare(self.keys[backjump - 1], self.keys[backjump + i]):
                 return (backjump - 1, backjump + i, None)
-            if backjump - i >= 0 and self.keys[backjump - i] < self.keys[backjump]:
+            if backjump - i >= 0 and compare(self.keys[backjump - i], self.keys[backjump]):
                 return (backjump - i, backjump, None)
         return None
+
+class BadSpanFatal(BadSpanBase):
+    def __init__(self, keys, name="fatal"):
+        super(BadSpanFatal, self).__init__(keys, name=name)
+    def shortname(self): return "fatal"
+    def apply(self, prev_good_idx, next_good_idx):
+        return prev_good_idx, next_good_idx, None
+    def correct(self, prev_good_idx, next_good_idx):
+        return None
+    def isfatal(self):
+        return True
+    def apply_and_maybe_commit(self, prev_limit_idx, prev_good_idx, next_good_idx, next_limit_idx, new_items):
+        self.statistics.append((prev_good_idx, next_good_idx))
+        return prev_good_idx, next_good_idx, new_items, self
+    def check_limits(self, prev_limit_idx, prev_good_idx, next_good_idx, next_limit_idx):
+        return True # accept anything
 
 def bad_span_correct(handlers, prev_limit_idx, prev_good_idx, next_good_idx, next_limit_idx):
     for h in handlers:
         result = h.apply(prev_good_idx, next_good_idx)
         if result != None:
-            prev_good_idx, next_good_idx, new_items = result
-            if prev_limit_idx <= prev_good_idx and next_good_idx <= next_limit_idx:
-                h.statistics.append((prev_good_idx, next_good_idx))
+            real_prev_good_idx, real_next_good_idx, new_items = result
+            if h.check_limits(prev_limit_idx, real_prev_good_idx, real_next_good_idx, next_limit_idx):
+                h.statistics.append((real_prev_good_idx, real_next_good_idx))
                 if new_items == None:
-                    n_between = h.n_between(prev_good_idx, next_good_idx)
-                    new_items = spread_keys(h.keys[prev_good_idx], h.keys[next_good_idx], n_between)
-                return prev_good_idx, next_good_idx, new_items, h
-    raise Exception("@todo no suitable handler found for bad span")
+                    new_items = h.correct(real_prev_good_idx, real_next_good_idx)
+                return real_prev_good_idx, real_next_good_idx, new_items, h
+    raise Exception("should be unreachable")
 
 def format_table(rows):
     cols = max([len(row) for row in rows])
@@ -274,13 +344,17 @@ def main_cheat(istream, ostream, debug=0):
     data = read_stream(istream)
     keys = unduplicate([k for k, rest in data])
     keys_new = keys[:]
-    handlers = [BadSpanOne(keys), BadSpanMonotonic(keys), BadSpanSearchFromBackJump(keys), BadSpanSingleJump(keys), BadSpanSpread(keys)]
+    handlers = [BadSpanOne(keys), BadSpanMonotonic(keys), BadSpanSearchFromBackJump(keys), BadSpanSingleJump(keys), BadSpanSpread(keys), BadSpanFatal(keys)]
     spans = list(get_bad_spans(keys))
     prev_limit_idx = 0
     new_spans = []
+    failed = None
     for i, (prev_good_idx, next_good_idx) in enumerate(spans):
         next_limit_idx = spans[i + 1][0] if i + 1 < len(spans) else (len(keys) - 1)
         prev_good_idx, next_good_idx, new_items, h = bad_span_correct(handlers, prev_limit_idx, prev_good_idx, next_good_idx, next_limit_idx)
+        if new_items == None:
+            failed = (prev_good_idx, next_good_idx)
+            break
         new_spans.append((prev_good_idx, next_good_idx, h))
         keys_new[prev_good_idx + 1 : next_good_idx] = new_items
         prev_limit_idx = next_good_idx
@@ -316,8 +390,11 @@ def main_cheat(istream, ostream, debug=0):
         for line in format_table(dump):
             print >>sys.stderr, "%s" % (line,)
     try:
-        for k, (k_orig, rest) in itertools.izip(keys_new, data):
-            print >>ostream, "%s%s" % (k.lstrip('0'), rest)
+        if failed:
+            print >>sys.stderr, "error: failed to correct bad region between lines %r..%r (timestamps %s..%s)" % (failed[0], failed[1], keys[failed[0]], keys[failed[1]])
+        else:
+            for k, (k_orig, rest) in itertools.izip(keys_new, data):
+                print >>ostream, "%s%s" % (k.lstrip('0'), rest)
     except IOError:
         pass
 
