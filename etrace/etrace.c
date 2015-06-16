@@ -39,9 +39,7 @@
 
 #define CPY_MAX 4096
 
-/* This binds when global variable initialization is run in .start, i.e.
-* before CTOR */
-log_level log_filter_level = DEF_LOG_LEVEL;
+extern log_level log_filter_level;
 
 struct opts opts = {
 /* *INDENT-OFF* */
