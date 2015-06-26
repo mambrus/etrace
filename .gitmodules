@@ -9,4 +9,4 @@
 	url = https://github.com/mambrus/libmtime
 [submodule "wikidate_somc"]
 	path = wikidata
-	url = seldlx0294:/opt/gits/etrace_wiki.git
+	url = ../etrace_wiki.git
