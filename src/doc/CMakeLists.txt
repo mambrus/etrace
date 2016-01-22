@@ -22,7 +22,7 @@ if(PANDOC_EXECUTABLE)
     message(STATUS "Will use pandoc to generate interactive help")
     add_custom_command(
         OUTPUT cmd_help.h cmd_help.man
-        COMMAND bash ${CMAKE_CURRENT_SOURCE_DIR}/bin/generate.bash ${CMAKE_CURRENT_SOURCE_DIR}/../../wiki/wikidata/interactive-help.page
+        COMMAND bash ${CMAKE_CURRENT_SOURCE_DIR}/bin/generate.bash ${CMAKE_CURRENT_SOURCE_DIR}/interactive-help.page
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/gen
     )
 else(PANDOC_EXECUTABLE)
