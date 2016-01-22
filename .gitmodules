@@ -1,12 +1,12 @@
-[submodule "etrace/lib/liblog"]
-	path = etrace/lib/liblog
+[submodule "src/lib/liblog"]
+	path = src/lib/liblog
 	url = https://github.com/mambrus/liblog
-[submodule "etrace/lib/libmlist"]
-	path = etrace/lib/libmlist
+[submodule "src/lib/libmlist"]
+	path = src/lib/libmlist
 	url = https://github.com/mambrus/libmlist
-[submodule "etrace/lib/libmtime"]
-	path = etrace/lib/libmtime
+[submodule "src/lib/libmtime"]
+	path = src/lib/libmtime
 	url = https://github.com/mambrus/libmtime
-[submodule "wikidate_somc"]
+[submodule "wiki/wikidata"]
 	path = wiki/wikidata
-	url = ../etrace_wiki.git
+	url = https://github.com/mambrus/etrace_wiki
