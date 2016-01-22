@@ -8,5 +8,5 @@
 	path = etrace/lib/libmtime
 	url = https://github.com/mambrus/libmtime
 [submodule "wikidate_somc"]
-	path = wikidata
+	path = wiki/wikidata
 	url = ../etrace_wiki.git
