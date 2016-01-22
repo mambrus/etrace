@@ -7,7 +7,7 @@ Get documentation below. Build-system is CMake-based. Please read
 more about it in the [wiki](wiki/README.md).
 
 
-Simplified build-instructions are available under [src/README.md].
+Simplified build-instructions are available under [src/README.md](src/README.md).
 
 Cloning with submodules in one go:
 ----------------------------------
