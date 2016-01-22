@@ -15,5 +15,5 @@ make -j$(cat /proc/cpuinfo | grep processor | wc -l)
 differs from other buld-directories*
 
 More detailed build-instructions in the [wiki](http://localhost:5011). If
-you haven't set up your wiki locally, you can read more about how in the [wiki subdirectory][../wiki/README.md]
+you haven't set up your wiki locally, you can read more about how in the [wiki subdirectory](../wiki/README.md)
 
