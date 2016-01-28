@@ -133,7 +133,7 @@ table-of-contents: yes
 # specifies whether to print a tables of contents (with links to
 # sections) on each wiki page.
 
-plugins: plugins/Dot
+#plugins: plugins/Dot
 #plugins: plugins/JavaScript
 
 # specifies a list of plugins to load.  Plugins may be specified
